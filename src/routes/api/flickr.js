@@ -32,7 +32,7 @@ router.get('/user/:userId/photos', async (req, res, next) => {
     const result = await flickr.getUserPhotos(userId, page, perPage);
 
     // Transform response for easier frontend consumption
-    const photos = result.photos.photo.map(photo => {
+    const photos = (result.photos.photo || []).map(photo => {
       // Get dimensions - prefer original, fall back to large, then medium
       const width = photo.o_width ? parseInt(photo.o_width) :
                     photo.width_l ? parseInt(photo.width_l) :
@@ -85,7 +85,7 @@ router.get('/search', async (req, res, next) => {
     const result = await flickr.searchByTag(tags, page, perPage);
 
     // Transform response for easier frontend consumption
-    const photos = result.photos.photo.map(photo => {
+    const photos = (result.photos.photo || []).map(photo => {
       // Get dimensions - prefer original, fall back to large, then medium
       const width = photo.o_width ? parseInt(photo.o_width) :
                     photo.width_l ? parseInt(photo.width_l) :
@@ -188,7 +188,7 @@ router.get('/photo/:photoId/info', async (req, res, next) => {
         posted: result.photo.dates.posted
       },
       media: result.photo.media,
-      tags: result.photo.tags.tag.map(t => t.raw)
+      tags: (result.photo.tags.tag || []).map(t => t.raw)
     });
   } catch (error) {
     next(error);
@@ -256,7 +256,7 @@ router.get('/album/:albumId/photos', async (req, res, next) => {
     const result = await flickr.getPhotosetPhotos(albumId, userId, page, perPage);
 
     // Transform response
-    const photos = result.photoset.photo.map(photo => {
+    const photos = (result.photoset.photo || []).map(photo => {
       // Get dimensions - prefer original, fall back to large, then medium
       const width = photo.o_width ? parseInt(photo.o_width) :
                     photo.width_l ? parseInt(photo.width_l) :
@@ -303,15 +303,15 @@ router.get('/group/:groupId/photos', async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const perPage = parseInt(req.query.per_page) || 24;
 
-    if (!groupId) {
-      return res.status(400).json({ error: 'Group ID is required' });
+    if (!groupId || !/^\d+@N\d+$/.test(groupId)) {
+      return res.status(400).json({ error: 'Invalid group ID format' });
     }
 
     const flickr = getFlickr(req);
     const result = await flickr.getGroupPhotos(groupId, page, perPage);
 
     // Transform response
-    const photos = result.photos.photo.map(photo => {
+    const photos = (result.photos.photo || []).map(photo => {
       // Get dimensions - prefer original, fall back to large, then medium
       const width = photo.o_width ? parseInt(photo.o_width) :
                     photo.width_l ? parseInt(photo.width_l) :
@@ -357,15 +357,15 @@ router.get('/gallery/:galleryId/photos', async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const perPage = parseInt(req.query.per_page) || 24;
 
-    if (!galleryId) {
-      return res.status(400).json({ error: 'Gallery ID is required' });
+    if (!galleryId || !/^\d+$/.test(galleryId)) {
+      return res.status(400).json({ error: 'Invalid gallery ID' });
     }
 
     const flickr = getFlickr(req);
     const result = await flickr.getGalleryPhotos(galleryId, page, perPage);
 
     // Transform response
-    const photos = result.photos.photo.map(photo => {
+    const photos = (result.photos.photo || []).map(photo => {
       // Get dimensions - prefer original, fall back to large, then medium
       const width = photo.o_width ? parseInt(photo.o_width) :
                     photo.width_l ? parseInt(photo.width_l) :

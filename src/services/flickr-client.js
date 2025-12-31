@@ -167,6 +167,34 @@ class FlickrClient {
   }
 
   /**
+   * Look up a group by URL (to get group ID from group URL)
+   * @param {string} url - Flickr group URL
+   * @returns {Promise<Object>}
+   */
+  async lookupGroup(url) {
+    return this.request('flickr.urls.lookupGroup', {
+      url
+    });
+  }
+
+  /**
+   * Resolve a group path/slug to an NSID
+   * @param {string} groupPath - Flickr group path or NSID
+   * @returns {Promise<string>} - The group's NSID (e.g., "12345678@N00")
+   */
+  async resolveGroupId(groupPath) {
+    // If it already looks like an NSID, return it
+    if (groupPath.includes('@')) {
+      return groupPath;
+    }
+
+    // Look up the group by their URL
+    const groupUrl = `https://www.flickr.com/groups/${groupPath}/`;
+    const result = await this.lookupGroup(groupUrl);
+    return result.group.id;
+  }
+
+  /**
    * Get photos from a group pool
    * @param {string} groupId - Flickr group ID (e.g., "14660092@N20")
    * @param {number} page - Page number

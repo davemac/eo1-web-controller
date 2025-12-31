@@ -210,7 +210,13 @@ router.post('/presets', async (req, res, next) => {
       if (parsed.type === 'tag') {
         presetData.tag = parsed.value;
       } else if (parsed.type === 'group') {
-        presetData.groupId = parsed.value;
+        // Groups need NSID - resolve slug to NSID if needed
+        const flickr = req.app.get('flickrClient');
+        try {
+          presetData.groupId = await flickr.resolveGroupId(parsed.value);
+        } catch (err) {
+          return res.status(400).json({ error: `Could not resolve group "${parsed.value}": ${err.message}` });
+        }
       } else if (parsed.type === 'gallery') {
         presetData.galleryId = parsed.value;
       } else if (parsed.type === 'album') {
