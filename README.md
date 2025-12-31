@@ -116,11 +116,17 @@ Access the interface at `http://localhost:3000`
 
 ### Access from iPhone via Tailscale
 
-1. Ensure your Mac is on Tailscale
-2. Start the server: `npm start`
-3. On iPhone, open Safari and go to `http://[your-mac-tailscale-ip]:3000`
+With [Tailscale](https://tailscale.com/) you can control your EO1 from anywhere - not just your home network.
 
-The Tailscale IP is displayed in the console when the server starts.
+1. Install Tailscale on your Mac and iPhone
+2. Sign in to the same Tailscale account on both devices
+3. Find your Mac's Tailscale IP:
+   - **Option A:** Run `tailscale ip -4` in Terminal
+   - **Option B:** Visit [login.tailscale.com/admin/machines](https://login.tailscale.com/admin/machines) - your IP is in the "Addresses" column
+4. Start the server: `npm start`
+5. On iPhone, open Safari and go to `http://[your-tailscale-ip]:3000`
+
+Example: If your Tailscale IP is `100.95.175.83`, use `http://100.95.175.83:3000`
 
 ## Built-in Presets
 
