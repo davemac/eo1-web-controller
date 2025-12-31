@@ -86,6 +86,47 @@ class FlickrClient {
   }
 
   /**
+   * Advanced text search with filters
+   * @param {Object} searchParams - Search parameters
+   * @param {string} searchParams.text - Text to search for
+   * @param {string} [searchParams.orientation] - square, landscape, portrait, panorama
+   * @param {number} [searchParams.min_width] - Minimum width
+   * @param {number} [searchParams.min_height] - Minimum height
+   * @param {number} [searchParams.content_type] - 1=photos, 2=screenshots, 3=other, 4=photos+screenshots
+   * @param {number} page - Page number
+   * @param {number} perPage - Items per page
+   * @returns {Promise<Object>}
+   */
+  async advancedSearch(searchParams, page = 1, perPage = 24) {
+    const params = {
+      text: searchParams.text,
+      per_page: Math.min(perPage, 500),
+      page,
+      extras: 'media,url_sq,url_m,url_l,url_o,original_format,o_dims,width_l,height_l,width_m,height_m',
+      sort: 'relevance'  // Most relevant for text search
+    };
+
+    // Add optional filters
+    if (searchParams.orientation) {
+      params.orientation = searchParams.orientation;
+    }
+    if (searchParams.min_width) {
+      params.min_upload_date = undefined;  // Clear any defaults
+      params.dimension_search_mode = 'min';
+      params.width = searchParams.min_width;
+    }
+    if (searchParams.min_height) {
+      params.dimension_search_mode = 'min';
+      params.height = searchParams.min_height;
+    }
+    if (searchParams.content_type) {
+      params.content_type = searchParams.content_type;
+    }
+
+    return this.request('flickr.photos.search', params);
+  }
+
+  /**
    * Get available sizes for a photo
    * @param {string} photoId - Flickr photo ID
    * @returns {Promise<Object>}
@@ -272,6 +313,52 @@ class FlickrClient {
       }
 
       const path = parsed.pathname;
+
+      // Search URL: flickr.com/search/?text=...
+      if (path.match(/^\/search\/?$/i)) {
+        const params = parsed.searchParams;
+        const searchParams = {};
+
+        // Text query (required)
+        const text = params.get('text');
+        if (!text) {
+          return null;  // Search URL without text query
+        }
+        searchParams.text = text;
+
+        // Orientation filter
+        const orientation = params.get('orientation');
+        if (orientation) {
+          searchParams.orientation = orientation;  // square, landscape, portrait, panorama
+        }
+
+        // Dimension filters
+        const minWidth = params.get('width');
+        const minHeight = params.get('height');
+        if (minWidth) searchParams.min_width = parseInt(minWidth);
+        if (minHeight) searchParams.min_height = parseInt(minHeight);
+
+        // Content type (0=photos, 2=screenshots)
+        const contentTypes = params.get('content_types');
+        if (contentTypes) {
+          // Map Flickr web content_types to API content_type
+          // Web uses 0=photos, 2=screenshots; API uses 1=photos, 2=screenshots, 3=other
+          const types = contentTypes.split(',').map(t => parseInt(t));
+          if (types.includes(0) && types.includes(2)) {
+            searchParams.content_type = 4;  // photos and screenshots
+          } else if (types.includes(0)) {
+            searchParams.content_type = 1;  // photos only
+          } else if (types.includes(2)) {
+            searchParams.content_type = 2;  // screenshots only
+          }
+        }
+
+        return {
+          type: 'search',
+          value: text,
+          searchParams
+        };
+      }
 
       // Explore URL: flickr.com/explore/
       if (path.match(/^\/explore\/?$/i)) {

@@ -209,6 +209,9 @@ router.post('/presets', async (req, res, next) => {
       // Add the appropriate ID field based on type
       if (parsed.type === 'explore') {
         // Explore doesn't need any additional fields
+      } else if (parsed.type === 'search') {
+        // Advanced search - store the search parameters
+        presetData.searchParams = parsed.searchParams;
       } else if (parsed.type === 'tag') {
         presetData.tag = parsed.value;
       } else if (parsed.type === 'group') {

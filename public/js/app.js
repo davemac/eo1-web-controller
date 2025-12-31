@@ -219,7 +219,8 @@ function updateCurrentSourceDisplay(source) {
     user: 'User',
     photo: 'Photo',
     video: 'Video',
-    explore: 'Explore'
+    explore: 'Explore',
+    search: 'Search'
   };
   elements.currentSourceType.textContent = typeLabels[source.type] || source.type;
 
@@ -290,6 +291,7 @@ function renderPresets() {
       'gallery': 'Gallery',
       'album': 'Album',
       'explore': 'Explore',
+      'search': 'Search',
       'my-photos': 'You',
       'my-albums': 'Albums'
     };
@@ -374,6 +376,11 @@ async function activatePreset(id, preset) {
       state.currentSearch = { type: 'explore', value: 'explore' };
       await loadPhotos('explore', 'explore');
       showToast(`Browsing ${preset.name}`, 'success');
+    } else if (preset.type === 'search') {
+      // Advanced text search with filters
+      state.currentSearch = { type: 'search', value: preset.searchParams.text, searchParams: preset.searchParams };
+      await loadPhotos(preset.searchParams, 'search');
+      showToast(`Browsing ${preset.name}`, 'success');
     } else if (preset.type === 'group') {
       // Get group pool photos
       state.currentSearch = { type: 'group', value: preset.groupId };
@@ -437,6 +444,9 @@ async function loadPhotos(query, type = 'tag', page = 1) {
       result = await API.flickr.searchByTag(query, page);
     } else if (type === 'explore') {
       result = await API.flickr.getExplorePhotos(page);
+    } else if (type === 'search') {
+      // Advanced search - query is the searchParams object
+      result = await API.flickr.advancedSearch(query, page);
     } else if (type === 'group') {
       result = await API.flickr.getGroupPhotos(query, page);
     } else if (type === 'gallery') {

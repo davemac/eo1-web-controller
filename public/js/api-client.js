@@ -137,7 +137,13 @@ const API = {
      * Get interesting photos from Flickr Explore
      */
     getExplorePhotos: (page = 1) =>
-      API.request('GET', `/api/flickr/explore?page=${page}`)
+      API.request('GET', `/api/flickr/explore?page=${page}`),
+
+    /**
+     * Advanced text search with filters
+     */
+    advancedSearch: (searchParams, page = 1) =>
+      API.request('POST', `/api/flickr/search/advanced?page=${page}`, searchParams)
   },
 
   // Settings

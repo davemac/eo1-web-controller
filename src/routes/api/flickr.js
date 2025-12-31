@@ -108,6 +108,47 @@ router.get('/search', async (req, res, next) => {
 });
 
 /**
+ * POST /api/flickr/search/advanced
+ * Advanced text search with filters
+ * Body: { text, orientation?, min_width?, min_height?, content_type? }
+ * Query params: page (default: 1), per_page (default: 24)
+ */
+router.post('/search/advanced', async (req, res, next) => {
+  try {
+    const { text, orientation, min_width, min_height, content_type } = req.body;
+    const page = parseInt(req.query.page) || 1;
+    const perPage = parseInt(req.query.per_page) || 24;
+
+    if (!text) {
+      return res.status(400).json({ error: 'Text parameter is required' });
+    }
+
+    const searchParams = { text };
+    if (orientation) searchParams.orientation = orientation;
+    if (min_width) searchParams.min_width = parseInt(min_width);
+    if (min_height) searchParams.min_height = parseInt(min_height);
+    if (content_type) searchParams.content_type = parseInt(content_type);
+
+    const flickr = getFlickr(req);
+    const result = await flickr.advancedSearch(searchParams, page, perPage);
+
+    // Transform response for easier frontend consumption
+    const photos = (result.photos.photo || []).map(transformPhoto);
+
+    res.json({
+      photos,
+      page: parseInt(result.photos.page),
+      pages: parseInt(result.photos.pages),
+      perPage: parseInt(result.photos.perpage),
+      total: parseInt(result.photos.total),
+      searchParams
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * GET /api/flickr/photo/:photoId/sizes
  * Get available sizes for a photo
  */
