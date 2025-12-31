@@ -143,6 +143,42 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
+/**
+ * Format an error message with context
+ * Handles common API error patterns and provides user-friendly messages
+ * @param {string} context - What operation was being attempted
+ * @param {Error} error - The caught error
+ * @returns {string} - User-friendly error message
+ */
+function formatError(context, error) {
+  const msg = error.message || 'Unknown error';
+
+  // Handle common Flickr API errors
+  if (msg.includes('User not found')) {
+    return `${context}: Flickr user not found. Check the user ID or URL.`;
+  }
+  if (msg.includes('Invalid API Key')) {
+    return `${context}: Invalid Flickr API key. Check your settings.`;
+  }
+  if (msg.includes('Photoset not found')) {
+    return `${context}: Album not found or is private.`;
+  }
+  if (msg.includes('Group not found')) {
+    return `${context}: Group not found. It may be private or the URL is incorrect.`;
+  }
+
+  // Handle network errors
+  if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+    return `${context}: Network error. Check your connection.`;
+  }
+  if (msg.includes('ECONNREFUSED') || msg.includes('connect ETIMEDOUT')) {
+    return `${context}: Could not reach EO1 device. Check if it's powered on.`;
+  }
+
+  // Default: include context with original message
+  return `${context}: ${msg}`;
+}
+
 // Update connection status
 function updateStatus(connected) {
   state.connected = connected;
@@ -354,7 +390,7 @@ async function activatePreset(id, preset) {
       showToast(`Browsing ${preset.name}`, 'success');
     }
   } catch (error) {
-    showToast(error.message, 'error');
+    showToast(formatError('Failed to load photos', error), 'error');
   }
 }
 
@@ -371,7 +407,7 @@ async function deletePreset(id) {
     renderPresets();
     showToast('Preset deleted', 'success');
   } catch (error) {
-    showToast(error.message, 'error');
+    showToast(formatError('Failed to delete preset', error), 'error');
   }
 }
 
@@ -643,7 +679,7 @@ async function displayOnEO1() {
     showToast('Displaying on EO1!', 'success');
     closePreview();
   } catch (error) {
-    showToast(error.message, 'error');
+    showToast(formatError('Failed to send to EO1', error), 'error');
   }
 }
 
@@ -701,7 +737,7 @@ async function savePreset() {
     closeAddPresetModal();
     showToast('Preset saved!', 'success');
   } catch (error) {
-    showToast(error.message, 'error');
+    showToast(formatError('Failed to save preset', error), 'error');
   }
 }
 
@@ -789,7 +825,7 @@ async function saveFlickrSettings() {
 
     showToast('Flickr settings saved!', 'success');
   } catch (error) {
-    showToast(error.message, 'error');
+    showToast(formatError('Failed to save Flickr settings', error), 'error');
   }
 }
 
@@ -818,7 +854,7 @@ function setupEventListeners() {
       await API.device.skip();
       showToast('Skipped to next', 'success');
     } catch (error) {
-      showToast(error.message, 'error');
+      showToast(formatError('Skip failed', error), 'error');
     }
   });
 
@@ -844,7 +880,7 @@ function setupEventListeners() {
         showToast('Screen off', 'success');
       }
     } catch (error) {
-      showToast(error.message, 'error');
+      showToast(formatError('Screen toggle failed', error), 'error');
     }
   });
 
@@ -860,7 +896,7 @@ function setupEventListeners() {
         await API.device.setBrightness(parseInt(elements.brightnessSlider.value) / 100);
       }
     } catch (error) {
-      showToast(error.message, 'error');
+      showToast(formatError('Brightness failed', error), 'error');
     }
   });
 
@@ -875,7 +911,7 @@ function setupEventListeners() {
       try {
         await API.device.setBrightness(value / 100);
       } catch (error) {
-        showToast(error.message, 'error');
+        showToast(formatError('Brightness failed', error), 'error');
       }
     }, 300);
   });
@@ -941,7 +977,7 @@ function setupEventListeners() {
       await API.device.setOptions({ brightness, interval, startHour, endHour });
       showToast('Settings applied!', 'success');
     } catch (error) {
-      showToast(error.message, 'error');
+      showToast(formatError('Failed to apply settings', error), 'error');
     }
   });
 
@@ -958,7 +994,7 @@ function setupEventListeners() {
       await API.device.skip();
       showToast('Connected! Skipped to next image.', 'success');
     } catch (error) {
-      showToast('Connection failed: ' + error.message, 'error');
+      showToast(formatError('Connection failed', error), 'error');
     }
   });
 
@@ -969,7 +1005,7 @@ function setupEventListeners() {
         await API.settings.update({ deviceIp: ip });
         showToast('Device IP saved!', 'success');
       } catch (error) {
-        showToast(error.message, 'error');
+        showToast(formatError('Failed to save device IP', error), 'error');
       }
     }
   });
