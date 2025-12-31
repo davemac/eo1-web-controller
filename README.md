@@ -128,6 +128,7 @@ These community resources are pre-configured:
 
 | Preset | Type | Description |
 |--------|------|-------------|
+| **Flickr Explore** | Explore | [Flickr's curated interesting photos](https://www.flickr.com/explore/) - daily updated selection |
 | **Community Art** | Tag | Photos tagged [`electricobjectslives`](https://www.flickr.com/photos/tags/electricobjectslives/) - shared by EO1 owners |
 | **Video Loops** | Tag | Photos tagged [`jadsmp4s`](https://www.flickr.com/photos/tags/jadsmp4s/) - ~160 MP4 video loops |
 | **crushingcodes Gallery** | User | [Curated art collection](https://www.flickr.com/photos/157826401@N07/) by crushingcodes |
@@ -148,6 +149,7 @@ Looking for more art? Try these Flickr sources:
    - Tag search: `https://www.flickr.com/photos/tags/nature/`
    - Group pool: `https://www.flickr.com/groups/groupname/pool/`
    - Gallery: `https://www.flickr.com/photos/username/galleries/12345/`
+   - Explore: `https://www.flickr.com/explore/`
 3. Give it a name
 4. Click Save
 
