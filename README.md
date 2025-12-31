@@ -1,6 +1,6 @@
 # EO1 Web Controller
 
-A web-based interface for controlling the Electric Objects EO1 digital art display. Replaces the Android-only Partner app, allowing control from any device including iPhone via Tailscale.
+A web-based interface for controlling the Electric Objects EO1 digital art display. Allows control from any device eg iPhone via Tailscale.
 
 <p align="center">
   <img src="screenshots/photo-grid.png" width="48%" alt="Photo Grid">
@@ -24,18 +24,16 @@ npm start
 
 Open http://localhost:3000 in your browser.
 
-> Works on **macOS**, **Windows**, and **Linux**.
-
 ---
 
 ## Features
 
 ### Device Control
 - **Skip/Resume**: Advance to the next image in slideshow
-- **Brightness**: Manual slider or auto-brightness using the EO1's light sensor
+- **Brightness**: Manual slider or auto-brightness using the EO1's light sensor (still buggy)
 - **Screen On/Off**: Quick toggle to turn display on or off
 - **Quiet Hours**: Configure when the display should sleep
-- **Network Scanner**: Automatically find EO1 devices on your network
+- **Network Scanner**: Find EO1 devices on your network
 
 ### Flickr Browser
 - **Multiple Source Types**: Browse user photos, tags, groups, galleries, and albums
@@ -46,7 +44,7 @@ Open http://localhost:3000 in your browser.
 
 ### Presets
 - **Built-in Community Sources**: Pre-configured access to community art collections
-- **Custom Sources**: Save any Flickr URL as a preset (users, tags, groups, galleries)
+- **Custom Sources**: Save any Flickr URL as a preset (users, tags, groups, galleries, albums)
 - **Delete Custom Presets**: Remove presets you no longer need
 
 ### Now Displaying
@@ -60,7 +58,7 @@ Open http://localhost:3000 in your browser.
 
 ### Background
 
-The Electric Objects EO1 is a discontinued digital art display. When Electric Objects shut down in 2023, their servers went offline and all devices got stuck at "Getting Art". Community member Dan Spalt created an open-source replacement app that brings the device back to life using Flickr as the image backend.
+The Electric Objects EO1 is a discontinued digital art display. When Electric Objects shut down in 2023, their servers went offline and all devices got stuck at the "Getting Art" screen. Community member Dan Spalt created an open-source replacement app that brings the device back to life using Flickr as the image backend.
 
 ### Device Setup
 
@@ -114,17 +112,17 @@ npm start
 
 Access the interface at `http://localhost:3000`
 
-### Access from iPhone via Tailscale
+### Access via Tailscale
 
 With [Tailscale](https://tailscale.com/) you can control your EO1 from anywhere - not just your home network.
 
-1. Install Tailscale on your Mac and iPhone
+1. Install Tailscale
 2. Sign in to the same Tailscale account on both devices
 3. Find your Mac's Tailscale IP:
    - **Option A:** Run `tailscale ip -4` in Terminal
    - **Option B:** Visit [login.tailscale.com/admin/machines](https://login.tailscale.com/admin/machines) - your IP is in the "Addresses" column
 4. Start the server: `npm start`
-5. On iPhone, open Safari and go to `http://[your-tailscale-ip]:3000`
+5. On browser and go to `http://[your-tailscale-ip]:3000`
 
 Example: If your Tailscale IP is `100.95.175.83`, use `http://100.95.175.83:3000`
 
@@ -141,10 +139,6 @@ These community resources are pre-configured:
 
 ### More Community Resources
 
-Looking for more art? Try these Flickr sources:
-
-- **[Electric Objects Group](https://www.flickr.com/groups/electricobjects/pool/)** - Community group pool
-- **[EO1 Art Collection](https://www.flickr.com/groups/eo1art/pool/)** - Another community group
 - **[r/electricobjects](https://www.reddit.com/r/electricobjects/)** - Reddit community often shares Flickr links
 
 ## Adding Custom Sources
@@ -155,6 +149,7 @@ Looking for more art? Try these Flickr sources:
    - Tag search: `https://www.flickr.com/photos/tags/nature/`
    - Group pool: `https://www.flickr.com/groups/groupname/pool/`
    - Gallery: `https://www.flickr.com/photos/username/galleries/12345/`
+   - Album: `https://www.flickr.com/photos/username/albums/12345/`
    - Explore: `https://www.flickr.com/explore/`
    - Search with filters: `https://www.flickr.com/search/?text=nature&orientation=square`
 3. Give it a name
@@ -173,7 +168,7 @@ When you try to display a landscape image, you'll see a warning but can still pr
 ## Troubleshooting
 
 ### Port already in use
-The `predev` script automatically kills any process on port 3000. If you still get errors:
+Both `npm start` and `npm run dev` automatically kill any process on port 3000 before starting. If you're running `node server.js` directly, you may need to manually free the port:
 
 **macOS/Linux:**
 ```bash
