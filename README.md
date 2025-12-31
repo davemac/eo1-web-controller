@@ -18,11 +18,10 @@ A web-based interface for controlling the Electric Objects EO1 digital art displ
 git clone https://github.com/davemac/eo1-web-controller.git
 cd eo1-web-controller
 npm install
-cp .env.example .env   # then edit with your Flickr API key
 npm start
 ```
 
-Open http://localhost:3000 in your browser.
+Open http://localhost:3000 and configure your Flickr API key in Settings.
 
 ---
 
@@ -83,20 +82,30 @@ You only need the **API Key** - not the API Secret.
 
 ## Configuration
 
-1. Copy the environment template:
-   ```bash
-   cp .env.example .env
-   ```
+All settings are configured through the web interface at http://localhost:3000:
 
-2. Edit `.env` with your settings:
-   ```
-   FLICKR_API_KEY=your_api_key_here
-   FLICKR_USER_ID=your_flickr_user_id
-   EO1_IP=192.168.1.43
-   PORT=3000
-   ```
+1. **Flickr API Key** - Enter in Settings → Flickr API Settings
+2. **Device IP** - Auto-detected or enter manually in Settings → Device Settings
+3. **Slideshow Settings** - Interval and quiet hours in Settings → Slideshow Settings
 
-   Alternatively, you can configure the Flickr API key through the web interface in Settings.
+Settings are saved to `config/settings.json` and persist between restarts.
+
+### Configuration Priority
+
+The app uses this priority chain for settings:
+
+1. **`config/settings.json`** - Saved via web UI (highest priority)
+2. **`.env`** - Environment variables (fallback)
+3. **`config/default.json`** - Built-in defaults (lowest priority)
+
+### Custom Server Port
+
+To run on a different port, create a `.env` file:
+
+```bash
+cp .env.example .env
+# Edit PORT=3000 to your preferred port
+```
 
 ## Usage
 
@@ -193,8 +202,7 @@ Stop-Process -Id (Get-NetTCPConnection -LocalPort 3000).OwningProcess -Force
 
 ### Flickr API errors
 - Ensure you have a Flickr Pro account (required for API apps since 2024)
-- Check your API key is correctly entered
-- The settings page shows whether the key comes from `.env` or saved settings
+- Check your API key is correctly entered in Settings → Flickr API Settings
 
 ## For Developers
 

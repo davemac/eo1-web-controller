@@ -276,14 +276,22 @@ All interactive elements are cached in an `elements` object at startup for perfo
 
 ## Configuration
 
+### Settings Priority
+
+The app uses this priority chain:
+1. **`config/settings.json`** - Saved via web UI (highest priority)
+2. **`.env`** - Environment variables (fallback)
+3. **`config/default.json`** - Built-in defaults (lowest priority)
+
 ### Environment Variables (`.env`)
+
+Optional - only needed to override server port/host:
 ```
-FLICKR_API_KEY=xxx      # Flickr API key (requires Flickr Pro to create app)
-FLICKR_USER_ID=xxx      # Your Flickr user ID
-EO1_IP=192.168.1.43     # EO1 device IP address
-PORT=3000               # Server port
-HOST=0.0.0.0            # Server host (0.0.0.0 for network access)
+PORT=3000               # Server port (default: 3000)
+HOST=0.0.0.0            # Server host (default: 0.0.0.0 for network access)
 ```
+
+All other settings (Flickr API key, device IP, etc.) are configured via the web UI and saved to `config/settings.json`.
 
 ### Built-in Presets (`config/default.json`)
 Pre-configured community sources that cannot be deleted:
