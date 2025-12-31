@@ -1,0 +1,1028 @@
+/**
+ * EO1 Web Controller - Main Application
+ *
+ * This is a single-page application that provides a web interface for controlling
+ * the Electric Objects EO1 digital art display. It communicates with a Node.js
+ * backend which in turn talks to the EO1 device via TCP and the Flickr API via HTTPS.
+ *
+ * Key features:
+ * - Browse Flickr photos by user, tag, group, gallery, or album
+ * - Display images/videos on the EO1 device
+ * - Control brightness and slideshow settings
+ * - Save custom Flickr sources as presets
+ * - Portrait orientation detection (EO1 is a vertical display)
+ */
+
+// ============================================================================
+// Application State
+// ============================================================================
+
+/**
+ * Global application state
+ * All UI state is managed here rather than in the DOM
+ */
+const state = {
+  connected: false,
+  presets: {},
+  activePreset: null,
+  currentSearch: null,
+  currentPage: 1,
+  totalPages: 1,
+  photos: [],
+  albums: [],
+  currentAlbum: null,
+  selectedPhoto: null,
+  flickrUserId: null
+};
+
+// ============================================================================
+// DOM Element References
+// ============================================================================
+
+/**
+ * Cached references to DOM elements
+ * Populated once at startup for performance
+ */
+const elements = {
+  statusIndicator: document.getElementById('statusIndicator'),
+  // Current source
+  currentSourceCard: document.getElementById('currentSourceCard'),
+  currentSourceThumb: document.getElementById('currentSourceThumb'),
+  currentSourceImage: document.getElementById('currentSourceImage'),
+  currentSourceType: document.getElementById('currentSourceType'),
+  currentSourceName: document.getElementById('currentSourceName'),
+  currentSourceLink: document.getElementById('currentSourceLink'),
+  // Quick controls
+  btnSkip: document.getElementById('btnSkip'),
+  btnScreenToggle: document.getElementById('btnScreenToggle'),
+  screenIcon: document.getElementById('screenIcon'),
+  screenLabel: document.getElementById('screenLabel'),
+  autoBrightness: document.getElementById('autoBrightness'),
+  brightnessSlider: document.getElementById('brightnessSlider'),
+  brightnessSliderRow: document.getElementById('brightnessSliderRow'),
+  brightnessValue: document.getElementById('brightnessValue'),
+  presetGrid: document.getElementById('presetGrid'),
+  btnAddPreset: document.getElementById('btnAddPreset'),
+  interval: document.getElementById('interval'),
+  quietStart: document.getElementById('quietStart'),
+  quietEnd: document.getElementById('quietEnd'),
+  btnApplySettings: document.getElementById('btnApplySettings'),
+  searchInput: document.getElementById('searchInput'),
+  btnSearch: document.getElementById('btnSearch'),
+  photoGrid: document.getElementById('photoGrid'),
+  pagination: document.getElementById('pagination'),
+  btnPrevPage: document.getElementById('btnPrevPage'),
+  btnNextPage: document.getElementById('btnNextPage'),
+  pageInfo: document.getElementById('pageInfo'),
+  deviceIp: document.getElementById('deviceIp'),
+  btnTestConnection: document.getElementById('btnTestConnection'),
+  btnScanNetwork: document.getElementById('btnScanNetwork'),
+  scanStatus: document.getElementById('scanStatus'),
+  scanResults: document.getElementById('scanResults'),
+  foundDevices: document.getElementById('foundDevices'),
+  btnUseDevice: document.getElementById('btnUseDevice'),
+  btnSaveDevice: document.getElementById('btnSaveDevice'),
+  // Flickr settings
+  flickrStatus: document.getElementById('flickrStatus'),
+  flickrSource: document.getElementById('flickrSource'),
+  flickrApiKey: document.getElementById('flickrApiKey'),
+  flickrUserId: document.getElementById('flickrUserId'),
+  btnSaveFlickr: document.getElementById('btnSaveFlickr'),
+  // Modals
+  previewModal: document.getElementById('previewModal'),
+  btnClosePreview: document.getElementById('btnClosePreview'),
+  previewImage: document.getElementById('previewImage'),
+  previewVideo: document.getElementById('previewVideo'),
+  previewTitle: document.getElementById('previewTitle'),
+  previewMeta: document.getElementById('previewMeta'),
+  btnDisplayOnEO1: document.getElementById('btnDisplayOnEO1'),
+  addPresetModal: document.getElementById('addPresetModal'),
+  btnCloseAddPreset: document.getElementById('btnCloseAddPreset'),
+  presetUrl: document.getElementById('presetUrl'),
+  presetName: document.getElementById('presetName'),
+  presetPreview: document.getElementById('presetPreview'),
+  btnSavePreset: document.getElementById('btnSavePreset'),
+  toastContainer: document.getElementById('toastContainer')
+};
+
+// ============================================================================
+// UI Helper Functions
+// ============================================================================
+
+/**
+ * Update the screen on/off button to reflect current state
+ */
+function updateScreenButton(isOn) {
+  if (isOn) {
+    elements.screenIcon.textContent = '☀️';
+    elements.screenLabel.textContent = 'On';
+    elements.btnScreenToggle.classList.remove('screen-off');
+  } else {
+    elements.screenIcon.textContent = '🌙';
+    elements.screenLabel.textContent = 'Off';
+    elements.btnScreenToggle.classList.add('screen-off');
+  }
+}
+
+// Toast notifications
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+
+  const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+  toast.innerHTML = `
+    <span class="toast-icon">${icon}</span>
+    <span class="toast-message">${message}</span>
+  `;
+
+  elements.toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Update connection status
+function updateStatus(connected) {
+  state.connected = connected;
+  const dot = elements.statusIndicator.querySelector('.status-dot');
+  const text = elements.statusIndicator.querySelector('.status-text');
+
+  if (connected) {
+    dot.className = 'status-dot connected';
+    text.textContent = 'Connected';
+  } else {
+    dot.className = 'status-dot disconnected';
+    text.textContent = 'Disconnected';
+  }
+}
+
+// Load and display current source
+async function loadCurrentSource() {
+  try {
+    const result = await API.settings.getCurrentSource();
+    updateCurrentSourceDisplay(result.currentSource);
+  } catch (error) {
+    console.error('Failed to load current source:', error);
+  }
+}
+
+// Update the current source display
+function updateCurrentSourceDisplay(source) {
+  if (!source) {
+    // Show default state
+    elements.currentSourceType.textContent = '—';
+    elements.currentSourceName.textContent = 'Select a source below';
+    elements.currentSourceLink.style.display = 'none';
+    elements.currentSourceThumb.style.display = 'none';
+    return;
+  }
+
+  // Set type label
+  const typeLabels = {
+    tag: 'Tag',
+    user: 'User',
+    photo: 'Photo',
+    video: 'Video'
+  };
+  elements.currentSourceType.textContent = typeLabels[source.type] || source.type;
+
+  // Set name
+  elements.currentSourceName.textContent = source.name || source.value;
+
+  // Set link
+  if (source.url) {
+    elements.currentSourceLink.href = source.url;
+    elements.currentSourceLink.style.display = 'inline';
+  } else {
+    elements.currentSourceLink.style.display = 'none';
+  }
+
+  // Set thumbnail (only for photos/videos)
+  if (source.thumbnailUrl) {
+    elements.currentSourceImage.src = source.thumbnailUrl;
+    elements.currentSourceThumb.style.display = 'block';
+  } else {
+    elements.currentSourceThumb.style.display = 'none';
+  }
+}
+
+// Get device info (doesn't actually test connection to avoid crashing EO1)
+async function getDeviceInfo() {
+  try {
+    const result = await API.device.status();
+    if (result.ip) {
+      elements.deviceIp.value = result.ip;
+    }
+    return result;
+  } catch (error) {
+    console.error('Failed to get device info:', error);
+    return null;
+  }
+}
+
+// ============================================================================
+// Preset Management
+// ============================================================================
+
+/**
+ * Load all presets (built-in + custom) from the server
+ */
+async function loadPresets() {
+  try {
+    const result = await API.settings.getPresets();
+    state.presets = result.presets;
+    renderPresets();
+  } catch (error) {
+    console.error('Failed to load presets:', error);
+  }
+}
+
+// Render presets
+function renderPresets() {
+  elements.presetGrid.innerHTML = '';
+
+  for (const [id, preset] of Object.entries(state.presets)) {
+    const card = document.createElement('div');
+    card.className = `preset-card ${state.activePreset === id ? 'active' : ''}`;
+    card.dataset.id = id;
+
+    const typeLabels = {
+      'tag': 'Tag',
+      'user': 'User',
+      'group': 'Group',
+      'gallery': 'Gallery',
+      'my-photos': 'You',
+      'my-albums': 'Albums'
+    };
+    const typeLabel = typeLabels[preset.type] || preset.type;
+
+    card.innerHTML = `
+      <div class="preset-name">${preset.name}</div>
+      <div class="preset-type-badge">${typeLabel}</div>
+      ${!preset.builtin ? '<button class="delete-btn" title="Delete">×</button>' : ''}
+    `;
+
+    // Click to activate preset
+    card.addEventListener('click', (e) => {
+      if (e.target.classList.contains('delete-btn')) {
+        e.stopPropagation();
+        deletePreset(id);
+        return;
+      }
+      activatePreset(id, preset);
+    });
+
+    elements.presetGrid.appendChild(card);
+  }
+}
+
+// Activate a preset
+async function activatePreset(id, preset) {
+  state.activePreset = id;
+  renderPresets();
+
+  // Load photos from this preset
+  try {
+    if (preset.type === 'tag') {
+      state.currentSearch = { type: 'tag', value: preset.tag };
+      await loadPhotos(preset.tag, 'tag');
+
+      // Also update the EO1 device
+      await API.device.setTag(preset.tag, preset.name);
+      showToast(`Switched to ${preset.name}`, 'success');
+
+      // Update current source display
+      updateCurrentSourceDisplay({
+        type: 'tag',
+        value: preset.tag,
+        name: preset.name,
+        url: `https://www.flickr.com/photos/tags/${encodeURIComponent(preset.tag)}/`
+      });
+    } else if (preset.type === 'my-photos') {
+      // Get user's own photos using configured User ID
+      const flickrSettings = await API.settings.getFlickr();
+      if (!flickrSettings.userId) {
+        showToast('Please add your Flickr User ID in Flickr API Settings', 'error');
+        // Expand the Flickr settings section
+        const flickrSettingsSection = document.getElementById('flickrSettings');
+        if (flickrSettingsSection) {
+          flickrSettingsSection.classList.remove('collapsed');
+        }
+        return;
+      }
+      state.flickrUserId = flickrSettings.userId;
+      state.currentAlbum = null;
+      state.currentSearch = { type: 'user', value: flickrSettings.userId };
+      await loadPhotos(flickrSettings.userId, 'user');
+      showToast('Browsing your photos', 'success');
+    } else if (preset.type === 'my-albums') {
+      // Get user's albums
+      const flickrSettings = await API.settings.getFlickr();
+      if (!flickrSettings.userId) {
+        showToast('Please add your Flickr User ID in Flickr API Settings', 'error');
+        const flickrSettingsSection = document.getElementById('flickrSettings');
+        if (flickrSettingsSection) {
+          flickrSettingsSection.classList.remove('collapsed');
+        }
+        return;
+      }
+      state.flickrUserId = flickrSettings.userId;
+      state.currentAlbum = null;
+      await loadAlbums(flickrSettings.userId);
+      showToast('Browsing your albums', 'success');
+    } else if (preset.type === 'group') {
+      // Get group pool photos
+      state.currentSearch = { type: 'group', value: preset.groupId };
+      await loadPhotos(preset.groupId, 'group');
+      showToast(`Browsing ${preset.name}`, 'success');
+    } else if (preset.type === 'gallery') {
+      // Get gallery photos
+      state.currentSearch = { type: 'gallery', value: preset.galleryId };
+      await loadPhotos(preset.galleryId, 'gallery');
+      showToast(`Browsing ${preset.name}`, 'success');
+    } else {
+      state.currentSearch = { type: 'user', value: preset.userId };
+      await loadPhotos(preset.userId, 'user');
+      showToast(`Browsing ${preset.name}`, 'success');
+    }
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+// Delete a preset
+async function deletePreset(id) {
+  if (!confirm('Delete this preset?')) return;
+
+  try {
+    await API.settings.deletePreset(id);
+    delete state.presets[id];
+    if (state.activePreset === id) {
+      state.activePreset = null;
+    }
+    renderPresets();
+    showToast('Preset deleted', 'success');
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+// ============================================================================
+// Photo Browsing
+// ============================================================================
+
+/**
+ * Load photos from Flickr based on query and type
+ * @param {string} query - Search term, user ID, group ID, or gallery ID
+ * @param {string} type - 'tag', 'user', 'group', 'gallery', or 'album'
+ * @param {number} page - Page number for pagination
+ */
+async function loadPhotos(query, type = 'tag', page = 1) {
+  elements.photoGrid.innerHTML = '<div class="photo-grid-empty">Loading...</div>';
+
+  try {
+    let result;
+    if (type === 'tag') {
+      result = await API.flickr.searchByTag(query, page);
+    } else if (type === 'group') {
+      result = await API.flickr.getGroupPhotos(query, page);
+    } else if (type === 'gallery') {
+      result = await API.flickr.getGalleryPhotos(query, page);
+    } else {
+      result = await API.flickr.getUserPhotos(query, page);
+    }
+
+    state.photos = result.photos;
+    state.currentPage = result.page;
+    state.totalPages = result.pages;
+
+    renderPhotos();
+    updatePagination();
+  } catch (error) {
+    elements.photoGrid.innerHTML = `<div class="photo-grid-empty">Error: ${error.message}</div>`;
+    elements.pagination.style.display = 'none';
+  }
+}
+
+// Load albums
+async function loadAlbums(userId) {
+  elements.photoGrid.innerHTML = '<div class="photo-grid-empty">Loading albums...</div>';
+  elements.pagination.style.display = 'none';
+
+  try {
+    const result = await API.flickr.getUserAlbums(userId);
+    state.albums = result.albums;
+    state.photos = [];
+    renderAlbums();
+  } catch (error) {
+    elements.photoGrid.innerHTML = `<div class="photo-grid-empty">Error: ${error.message}</div>`;
+  }
+}
+
+// Render albums
+function renderAlbums() {
+  if (!state.albums.length) {
+    elements.photoGrid.innerHTML = '<div class="photo-grid-empty">No albums found</div>';
+    return;
+  }
+
+  elements.photoGrid.innerHTML = '';
+
+  for (const album of state.albums) {
+    const card = document.createElement('div');
+    card.className = 'album-card';
+    card.dataset.id = album.id;
+
+    const thumbUrl = album.primaryPhoto.thumbnailUrl || '';
+    const count = album.photoCount + album.videoCount;
+
+    card.innerHTML = `
+      <div class="album-thumb" style="background-image: url('${thumbUrl}')"></div>
+      <div class="album-info">
+        <div class="album-title">${album.title || 'Untitled'}</div>
+        <div class="album-count">${count} items</div>
+      </div>
+    `;
+
+    card.addEventListener('click', () => openAlbum(album));
+    elements.photoGrid.appendChild(card);
+  }
+}
+
+// Open an album
+async function openAlbum(album) {
+  state.currentAlbum = album;
+  state.currentSearch = { type: 'album', value: album.id, userId: state.flickrUserId };
+  await loadAlbumPhotos(album.id, state.flickrUserId, 1);
+}
+
+// Load photos from album
+async function loadAlbumPhotos(albumId, userId, page = 1) {
+  elements.photoGrid.innerHTML = '<div class="photo-grid-empty">Loading...</div>';
+
+  try {
+    const result = await API.flickr.getAlbumPhotos(albumId, userId, page);
+    state.photos = result.photos;
+    state.currentPage = result.page;
+    state.totalPages = result.pages;
+    renderPhotos();
+    updatePagination();
+  } catch (error) {
+    elements.photoGrid.innerHTML = `<div class="photo-grid-empty">Error: ${error.message}</div>`;
+    elements.pagination.style.display = 'none';
+  }
+}
+
+// Render photos
+function renderPhotos() {
+  if (!state.photos.length) {
+    elements.photoGrid.innerHTML = '<div class="photo-grid-empty">No photos found</div>';
+    return;
+  }
+
+  elements.photoGrid.innerHTML = '';
+
+  // If viewing an album, show back button
+  if (state.currentAlbum) {
+    const backBar = document.createElement('div');
+    backBar.className = 'album-back-bar';
+    backBar.innerHTML = `
+      <button class="btn btn-outline btn-sm" id="btnBackToAlbums">← Back to Albums</button>
+      <span class="album-current-title">${state.currentAlbum.title}</span>
+    `;
+    elements.photoGrid.appendChild(backBar);
+
+    backBar.querySelector('#btnBackToAlbums').addEventListener('click', () => {
+      state.currentAlbum = null;
+      renderAlbums();
+    });
+  }
+
+  for (const photo of state.photos) {
+    const card = document.createElement('div');
+    card.dataset.id = photo.id;
+
+    // Check orientation - portrait is optimised for EO1's 1080x1920 display
+    const isPortrait = photo.width && photo.height && photo.height > photo.width;
+    const isLandscape = photo.width && photo.height && photo.width > photo.height;
+
+    // Add orientation class
+    card.className = 'photo-card' + (isPortrait ? ' portrait' : '') + (isLandscape ? ' landscape' : '');
+
+    card.innerHTML = `
+      <img src="${photo.thumbnailUrl}" alt="${photo.title}" loading="lazy">
+      ${photo.media === 'video' ? '<span class="media-badge">Video</span>' : ''}
+      ${isPortrait ? '<span class="orientation-badge portrait" title="Portrait - optimised for EO1">▮</span>' : ''}
+    `;
+
+    card.addEventListener('click', () => openPreview(photo));
+    elements.photoGrid.appendChild(card);
+  }
+}
+
+// Update pagination
+function updatePagination() {
+  if (state.totalPages <= 1) {
+    elements.pagination.style.display = 'none';
+    return;
+  }
+
+  elements.pagination.style.display = 'flex';
+  elements.btnPrevPage.disabled = state.currentPage <= 1;
+  elements.btnNextPage.disabled = state.currentPage >= state.totalPages;
+  elements.pageInfo.textContent = `Page ${state.currentPage} of ${state.totalPages}`;
+}
+
+// ============================================================================
+// Preview Modal & EO1 Display
+// ============================================================================
+
+/**
+ * Open the preview modal for a photo
+ * Shows larger image, dimensions, and orientation info
+ */
+function openPreview(photo) {
+  state.selectedPhoto = photo;
+
+  elements.previewTitle.textContent = photo.title || 'Untitled';
+
+  // Build meta info with orientation
+  const mediaType = photo.media === 'video' ? 'Video' : 'Photo';
+  let metaText = mediaType;
+
+  if (photo.width && photo.height) {
+    const isPortrait = photo.height > photo.width;
+    metaText += ` · ${photo.width}×${photo.height}`;
+    if (isPortrait) {
+      metaText += ' · Portrait ✓';
+    } else {
+      metaText += ' · Landscape';
+    }
+  }
+  elements.previewMeta.textContent = metaText;
+
+  // Show appropriate media
+  if (photo.media === 'video') {
+    elements.previewImage.style.display = 'none';
+    elements.previewVideo.style.display = 'block';
+    elements.previewVideo.src = photo.largeUrl || photo.mediumUrl;
+  } else {
+    elements.previewVideo.style.display = 'none';
+    elements.previewImage.style.display = 'block';
+    elements.previewImage.src = photo.largeUrl || photo.mediumUrl || photo.thumbnailUrl;
+  }
+
+  elements.previewModal.classList.add('open');
+}
+
+// Close preview modal
+function closePreview() {
+  elements.previewModal.classList.remove('open');
+  elements.previewVideo.pause();
+  elements.previewVideo.src = '';
+  state.selectedPhoto = null;
+}
+
+// Display on EO1
+async function displayOnEO1() {
+  if (!state.selectedPhoto) return;
+
+  const photo = state.selectedPhoto;
+
+  // Check if landscape - warn user but allow display
+  // EO1 display is 1080x1920 portrait
+  if (photo.width && photo.height && photo.width > photo.height) {
+    const proceed = confirm(
+      'This image is landscape orientation.\n\n' +
+      'The EO1 display is portrait (1080×1920), so this image may not look optimal.\n\n' +
+      'Display anyway?'
+    );
+    if (!proceed) return;
+  }
+
+  try {
+    const title = photo.title || 'Untitled';
+    const mediaType = photo.media === 'video' ? 'video' : 'photo';
+
+    if (photo.media === 'video') {
+      await API.device.displayVideo(photo.id, title, photo.thumbnailUrl);
+    } else {
+      await API.device.displayImage(photo.id, title, photo.thumbnailUrl);
+    }
+
+    // Update current source display
+    updateCurrentSourceDisplay({
+      type: mediaType,
+      value: photo.id,
+      name: title,
+      url: `https://www.flickr.com/photos/any/${photo.id}/`,
+      thumbnailUrl: photo.thumbnailUrl
+    });
+
+    showToast('Displaying on EO1!', 'success');
+    closePreview();
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+// ============================================================================
+// Add Preset Modal
+// ============================================================================
+
+/**
+ * Open the modal for adding a custom preset
+ */
+function openAddPresetModal() {
+  elements.presetUrl.value = '';
+  elements.presetName.value = '';
+  elements.presetPreview.style.display = 'none';
+  elements.addPresetModal.classList.add('open');
+}
+
+// Close add preset modal
+function closeAddPresetModal() {
+  elements.addPresetModal.classList.remove('open');
+}
+
+// Parse preset URL
+async function parsePresetUrl() {
+  const url = elements.presetUrl.value.trim();
+  if (!url) {
+    elements.presetPreview.style.display = 'none';
+    return;
+  }
+
+  try {
+    const result = await API.settings.parseUrl(url);
+    elements.presetPreview.style.display = 'flex';
+    elements.presetPreview.querySelector('.preset-type').textContent = result.type;
+    elements.presetPreview.querySelector('.preset-value').textContent = result.value;
+  } catch (error) {
+    elements.presetPreview.style.display = 'none';
+  }
+}
+
+// Save preset
+async function savePreset() {
+  const url = elements.presetUrl.value.trim();
+  const name = elements.presetName.value.trim();
+
+  if (!url || !name) {
+    showToast('Please enter both URL and name', 'error');
+    return;
+  }
+
+  try {
+    const result = await API.settings.addPreset({ url, name });
+    state.presets[result.preset.id] = result.preset;
+    renderPresets();
+    closeAddPresetModal();
+    showToast('Preset saved!', 'success');
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+// Populate quiet hours dropdowns
+function populateHourDropdowns() {
+  for (let i = 0; i < 24; i++) {
+    const hour = i.toString().padStart(2, '0') + ':00';
+    elements.quietStart.innerHTML += `<option value="${i}">${hour}</option>`;
+    elements.quietEnd.innerHTML += `<option value="${i}">${hour}</option>`;
+  }
+}
+
+// ============================================================================
+// Settings Management
+// ============================================================================
+
+/**
+ * Load and display Flickr API settings
+ */
+async function loadFlickrSettings() {
+  try {
+    const flickr = await API.settings.getFlickr();
+
+    // Update status badge
+    const statusBadge = elements.flickrStatus.querySelector('.status-badge');
+    if (flickr.hasApiKey) {
+      statusBadge.textContent = 'Configured';
+      statusBadge.className = 'status-badge configured';
+
+      // Show source of configuration
+      if (flickr.source) {
+        elements.flickrSource.textContent = `from ${flickr.source}`;
+        elements.flickrSource.style.display = 'inline';
+      }
+    } else {
+      statusBadge.textContent = 'Not Configured';
+      statusBadge.className = 'status-badge not-configured';
+      elements.flickrSource.style.display = 'none';
+    }
+
+    // Show masked values in inputs as placeholders
+    if (flickr.apiKey) {
+      elements.flickrApiKey.placeholder = flickr.apiKey;
+    }
+    if (flickr.userId) {
+      elements.flickrUserId.value = flickr.userId;
+    }
+  } catch (error) {
+    console.error('Failed to load Flickr settings:', error);
+  }
+}
+
+// Save Flickr settings
+async function saveFlickrSettings() {
+  const apiKey = elements.flickrApiKey.value.trim();
+  const userId = elements.flickrUserId.value.trim();
+
+  // Only send values that were entered (not empty)
+  const updates = {};
+  if (apiKey) updates.apiKey = apiKey;
+  if (userId !== undefined) updates.userId = userId;
+
+  if (Object.keys(updates).length === 0) {
+    showToast('No changes to save', 'info');
+    return;
+  }
+
+  try {
+    const result = await API.settings.updateFlickr(updates);
+
+    // Clear the input field (it'll show masked value as placeholder)
+    elements.flickrApiKey.value = '';
+
+    // Update placeholder with new masked value
+    if (result.flickr.apiKey) {
+      elements.flickrApiKey.placeholder = result.flickr.apiKey;
+    }
+
+    // Update status
+    const statusBadge = elements.flickrStatus.querySelector('.status-badge');
+    if (result.flickr.hasApiKey) {
+      statusBadge.textContent = 'Configured';
+      statusBadge.className = 'status-badge configured';
+    }
+
+    showToast('Flickr settings saved!', 'success');
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+// Setup collapsible sections
+function setupCollapsibles() {
+  document.querySelectorAll('.collapsible-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const targetId = header.dataset.target;
+      const content = document.getElementById(targetId);
+      content.classList.toggle('collapsed');
+    });
+  });
+}
+
+// ============================================================================
+// Event Listeners
+// ============================================================================
+
+/**
+ * Set up all event listeners for UI interactions
+ */
+function setupEventListeners() {
+  // Quick controls
+  elements.btnSkip.addEventListener('click', async () => {
+    try {
+      await API.device.skip();
+      showToast('Skipped to next', 'success');
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
+  });
+
+  elements.btnScreenToggle.addEventListener('click', async () => {
+    try {
+      // Switch to manual brightness mode
+      elements.autoBrightness.checked = false;
+      elements.brightnessSlider.disabled = false;
+
+      // Toggle between off (0%) and on (50%)
+      const current = parseInt(elements.brightnessSlider.value) / 100;
+      if (current === 0) {
+        await API.device.setBrightness(0.5);
+        elements.brightnessSlider.value = 50;
+        elements.brightnessValue.textContent = '50%';
+        updateScreenButton(true);
+        showToast('Screen on', 'success');
+      } else {
+        await API.device.setBrightness(0);
+        elements.brightnessSlider.value = 0;
+        elements.brightnessValue.textContent = '0%';
+        updateScreenButton(false);
+        showToast('Screen off', 'success');
+      }
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
+  });
+
+  // Brightness
+  elements.autoBrightness.addEventListener('change', async () => {
+    const auto = elements.autoBrightness.checked;
+    elements.brightnessSlider.disabled = auto;
+
+    try {
+      if (auto) {
+        await API.device.setBrightness(null);
+      } else {
+        await API.device.setBrightness(parseInt(elements.brightnessSlider.value) / 100);
+      }
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
+  });
+
+  let brightnessTimeout;
+  elements.brightnessSlider.addEventListener('input', () => {
+    const value = parseInt(elements.brightnessSlider.value);
+    elements.brightnessValue.textContent = value + '%';
+    updateScreenButton(value > 0);
+
+    clearTimeout(brightnessTimeout);
+    brightnessTimeout = setTimeout(async () => {
+      try {
+        await API.device.setBrightness(value / 100);
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }, 300);
+  });
+
+  // Presets
+  elements.btnAddPreset.addEventListener('click', openAddPresetModal);
+  elements.btnCloseAddPreset.addEventListener('click', closeAddPresetModal);
+  elements.addPresetModal.querySelector('.modal-backdrop').addEventListener('click', closeAddPresetModal);
+  elements.presetUrl.addEventListener('input', parsePresetUrl);
+  elements.btnSavePreset.addEventListener('click', savePreset);
+
+  // Search
+  elements.btnSearch.addEventListener('click', () => {
+    const query = elements.searchInput.value.trim();
+    if (query) {
+      state.currentSearch = { type: 'tag', value: query };
+      state.activePreset = null;
+      renderPresets();
+      loadPhotos(query, 'tag');
+    }
+  });
+
+  elements.searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      elements.btnSearch.click();
+    }
+  });
+
+  // Pagination
+  elements.btnPrevPage.addEventListener('click', () => {
+    if (state.currentSearch && state.currentPage > 1) {
+      if (state.currentSearch.type === 'album') {
+        loadAlbumPhotos(state.currentSearch.value, state.currentSearch.userId, state.currentPage - 1);
+      } else {
+        loadPhotos(state.currentSearch.value, state.currentSearch.type, state.currentPage - 1);
+      }
+    }
+  });
+
+  elements.btnNextPage.addEventListener('click', () => {
+    if (state.currentSearch && state.currentPage < state.totalPages) {
+      if (state.currentSearch.type === 'album') {
+        loadAlbumPhotos(state.currentSearch.value, state.currentSearch.userId, state.currentPage + 1);
+      } else {
+        loadPhotos(state.currentSearch.value, state.currentSearch.type, state.currentPage + 1);
+      }
+    }
+  });
+
+  // Preview modal
+  elements.btnClosePreview.addEventListener('click', closePreview);
+  elements.previewModal.querySelector('.modal-backdrop').addEventListener('click', closePreview);
+  elements.btnDisplayOnEO1.addEventListener('click', displayOnEO1);
+
+  // Slideshow settings
+  elements.btnApplySettings.addEventListener('click', async () => {
+    try {
+      const brightness = elements.autoBrightness.checked ? -1 : parseInt(elements.brightnessSlider.value) / 100;
+      const interval = parseInt(elements.interval.value) || 5;
+      const startHour = parseInt(elements.quietStart.value);
+      const endHour = parseInt(elements.quietEnd.value);
+
+      await API.device.setOptions({ brightness, interval, startHour, endHour });
+      showToast('Settings applied!', 'success');
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
+  });
+
+  // Device settings
+  elements.btnTestConnection.addEventListener('click', async () => {
+    const ip = elements.deviceIp.value.trim();
+    if (!ip) {
+      showToast('Please enter an IP address', 'error');
+      return;
+    }
+    try {
+      await API.settings.update({ deviceIp: ip });
+      // Try sending a skip command to test - if it works, device is connected
+      await API.device.skip();
+      showToast('Connected! Skipped to next image.', 'success');
+    } catch (error) {
+      showToast('Connection failed: ' + error.message, 'error');
+    }
+  });
+
+  elements.btnSaveDevice.addEventListener('click', async () => {
+    const ip = elements.deviceIp.value.trim();
+    if (ip) {
+      try {
+        await API.settings.update({ deviceIp: ip });
+        showToast('Device IP saved!', 'success');
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+  });
+
+  // Network scanning
+  elements.btnScanNetwork.addEventListener('click', async () => {
+    elements.btnScanNetwork.disabled = true;
+    elements.scanStatus.textContent = 'Scanning for EO1 on port 12345...';
+    elements.scanResults.style.display = 'none';
+
+    try {
+      const result = await API.device.scanNetwork();
+
+      if (result.devices && result.devices.length > 0) {
+        elements.foundDevices.innerHTML = '';
+        for (const ip of result.devices) {
+          const option = document.createElement('option');
+          option.value = ip;
+          option.textContent = ip;
+          elements.foundDevices.appendChild(option);
+        }
+        elements.scanResults.style.display = 'flex';
+        elements.scanStatus.textContent = `Found ${result.devices.length} EO1 on ${result.subnet}.*`;
+        showToast(`Found ${result.devices.length} EO1 device(s)`, 'success');
+      } else {
+        elements.scanStatus.textContent = `No EO1 found on ${result.subnet}.*`;
+        showToast('No EO1 found on network', 'info');
+      }
+    } catch (error) {
+      elements.scanStatus.textContent = 'Scan failed';
+      showToast('EO1 scan failed: ' + error.message, 'error');
+    } finally {
+      elements.btnScanNetwork.disabled = false;
+    }
+  });
+
+  elements.btnUseDevice.addEventListener('click', () => {
+    const selectedIp = elements.foundDevices.value;
+    if (selectedIp) {
+      elements.deviceIp.value = selectedIp;
+      showToast(`Selected ${selectedIp}`, 'success');
+    }
+  });
+
+  // Flickr settings
+  elements.btnSaveFlickr.addEventListener('click', saveFlickrSettings);
+}
+
+// ============================================================================
+// Application Initialisation
+// ============================================================================
+
+/**
+ * Initialise the application
+ * Called once when the page loads
+ */
+async function init() {
+  populateHourDropdowns();
+  setupCollapsibles();
+  setupEventListeners();
+
+  // Load data (skip connection check - it can crash the EO1 app)
+  await Promise.all([
+    getDeviceInfo(),
+    loadPresets(),
+    loadFlickrSettings(),
+    loadCurrentSource()
+  ]);
+
+  // Don't auto-check connection - it opens/closes sockets which can crash EO1
+  // User can manually test connection in Device Settings
+}
+
+// Start the app
+init();

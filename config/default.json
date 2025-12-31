@@ -1,0 +1,52 @@
+{
+  "server": {
+    "port": 3000,
+    "host": "0.0.0.0"
+  },
+  "eo1": {
+    "defaultIp": "192.168.1.43",
+    "port": 12345,
+    "timeout": 5000
+  },
+  "flickr": {
+    "baseUrl": "https://api.flickr.com/services/rest/",
+    "defaultPerPage": 24,
+    "maxPerPage": 100
+  },
+  "presets": {
+    "my-photos": {
+      "name": "My Photos",
+      "type": "my-photos",
+      "description": "Your own Flickr photos (requires User ID in settings)",
+      "builtin": true
+    },
+    "my-albums": {
+      "name": "My Albums",
+      "type": "my-albums",
+      "description": "Browse your Flickr albums/photosets",
+      "builtin": true
+    },
+    "community": {
+      "name": "Community Art",
+      "type": "tag",
+      "tag": "electricobjectslives",
+      "description": "Shared art from EO1 community",
+      "builtin": true
+    },
+    "videos": {
+      "name": "Video Loops",
+      "type": "tag",
+      "tag": "jadsmp4s",
+      "description": "~160 MP4 video loops",
+      "builtin": true
+    },
+    "crushingcodes": {
+      "name": "crushingcodes Gallery",
+      "type": "user",
+      "userId": "157826401@N07",
+      "url": "https://www.flickr.com/photos/157826401@N07/",
+      "description": "Curated art collection",
+      "builtin": true
+    }
+  }
+}

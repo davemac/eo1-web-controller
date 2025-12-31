@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>EO1 Controller</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <h1>EO1 Controller</h1>
+      <div class="status-indicator" id="statusIndicator">
+        <span class="status-dot connected"></span>
+        <span class="status-text">Ready</span>
+      </div>
+    </header>
+
+    <!-- Now Playing + Controls -->
+    <section class="card current-source-card" id="currentSourceCard">
+      <div class="current-source">
+        <div class="current-source-thumb" id="currentSourceThumb" style="display: none;">
+          <img id="currentSourceImage" src="" alt="Current">
+        </div>
+        <div class="current-source-details">
+          <div class="current-source-label">Now Displaying</div>
+          <div class="current-source-info">
+            <span class="current-source-type" id="currentSourceType">—</span>
+            <span class="current-source-name" id="currentSourceName">Select a source below</span>
+          </div>
+          <a href="#" target="_blank" class="current-source-link" id="currentSourceLink" style="display: none;">View on Flickr</a>
+        </div>
+        <div class="current-source-actions">
+          <button class="btn btn-control" id="btnSkip" title="Skip to next">
+            <span class="btn-control-icon">⏭</span>
+            <span class="btn-control-label">Skip</span>
+          </button>
+          <button class="btn btn-control" id="btnScreenToggle" title="Toggle screen on/off">
+            <span class="btn-control-icon" id="screenIcon">☀️</span>
+            <span class="btn-control-label" id="screenLabel">On</span>
+          </button>
+        </div>
+      </div>
+      <div class="brightness-control">
+        <label>
+          <input type="checkbox" id="autoBrightness" checked>
+          Auto
+        </label>
+        <div class="slider-row" id="brightnessSliderRow">
+          <input type="range" id="brightnessSlider" min="0" max="100" value="50" disabled>
+          <span id="brightnessValue">50%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Source Selection & Browser -->
+    <section class="card">
+      <h2>Display Source</h2>
+      <div class="source-options">
+        <div class="preset-grid" id="presetGrid">
+          <!-- Presets will be loaded here -->
+        </div>
+        <div class="source-actions">
+          <button class="btn btn-outline" id="btnAddPreset">
+            + Add Custom Source
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Flickr -->
+      <div class="search-section">
+        <label class="search-label">Search all of Flickr by tag</label>
+        <div class="search-bar">
+          <input type="text" id="searchInput" placeholder="e.g., landscape, art, nature">
+          <button class="btn btn-primary" id="btnSearch">Search</button>
+        </div>
+      </div>
+
+      <!-- Photo/Album grid -->
+      <div class="photo-grid" id="photoGrid">
+        <div class="photo-grid-empty">Select a source above or search for a tag</div>
+      </div>
+
+      <div class="pagination" id="pagination" style="display: none;">
+        <button class="btn btn-outline" id="btnPrevPage" disabled>← Prev</button>
+        <span id="pageInfo">Page 1 of 1</span>
+        <button class="btn btn-outline" id="btnNextPage">Next →</button>
+      </div>
+    </section>
+
+    <!-- Slideshow Settings -->
+    <section class="card collapsible">
+      <h2 class="collapsible-header" data-target="slideshowSettings">
+        Slideshow Settings
+        <span class="collapse-icon">▼</span>
+      </h2>
+      <div class="collapsible-content" id="slideshowSettings">
+        <div class="form-group">
+          <label for="interval">Slideshow Interval (minutes)</label>
+          <input type="number" id="interval" min="1" max="60" value="5">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="quietStart">Quiet Hours Start</label>
+            <select id="quietStart">
+              <option value="-1">Disabled</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="quietEnd">Quiet Hours End</label>
+            <select id="quietEnd">
+              <option value="-1">Disabled</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="btnApplySettings">
+          Apply Settings
+        </button>
+      </div>
+    </section>
+
+    <!-- Device Settings -->
+    <section class="card collapsible">
+      <h2 class="collapsible-header" data-target="deviceSettings">
+        Device Settings
+        <span class="collapse-icon">▼</span>
+      </h2>
+      <div class="collapsible-content collapsed" id="deviceSettings">
+        <div class="form-group">
+          <label for="deviceIp">EO1 IP Address</label>
+          <div class="input-row">
+            <input type="text" id="deviceIp" placeholder="192.168.1.43">
+            <button class="btn btn-secondary" id="btnTestConnection">Test</button>
+          </div>
+          <div class="scan-row">
+            <button class="btn btn-outline" id="btnScanNetwork">Scan for EO1</button>
+            <span class="scan-status" id="scanStatus"></span>
+          </div>
+          <div class="scan-results" id="scanResults" style="display: none;">
+            <label>Found EO1:</label>
+            <select id="foundDevices"></select>
+            <button class="btn btn-secondary btn-sm" id="btnUseDevice">Use</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" id="btnSaveDevice">
+          Save Device Settings
+        </button>
+      </div>
+    </section>
+
+    <!-- Flickr API Settings -->
+    <section class="card collapsible">
+      <h2 class="collapsible-header" data-target="flickrSettings">
+        Flickr API Settings
+        <span class="collapse-icon">▼</span>
+      </h2>
+      <div class="collapsible-content collapsed" id="flickrSettings">
+        <div class="flickr-status" id="flickrStatus">
+          <span class="status-badge">Checking...</span>
+          <span class="status-source" id="flickrSource"></span>
+        </div>
+        <div class="form-group">
+          <label for="flickrApiKey">API Key</label>
+          <input type="text" id="flickrApiKey" placeholder="Enter your Flickr API key">
+          <small><a href="https://www.flickr.com/services/apps/create/" target="_blank">Create a Flickr App</a> to get your API key (requires Flickr Pro)</small>
+        </div>
+        <div class="form-group">
+          <label for="flickrUserId">Your Flickr User ID</label>
+          <input type="text" id="flickrUserId" placeholder="e.g., 85919197@N00">
+          <small>Find your ID at <a href="https://www.webfx.com/tools/idgettr/" target="_blank">idGettr</a> - paste your Flickr URL to get the numeric ID</small>
+        </div>
+        <button class="btn btn-primary btn-block" id="btnSaveFlickr">
+          Save Flickr Settings
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Preview Modal -->
+  <div class="modal" id="previewModal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <button class="modal-close" id="btnClosePreview">×</button>
+      <div class="preview-container">
+        <img id="previewImage" src="" alt="Preview">
+        <video id="previewVideo" controls loop style="display: none;"></video>
+      </div>
+      <div class="preview-info">
+        <h3 id="previewTitle">Photo Title</h3>
+        <p id="previewMeta"></p>
+      </div>
+      <div class="preview-actions">
+        <button class="btn btn-primary btn-large" id="btnDisplayOnEO1">
+          Display on EO1
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Preset Modal -->
+  <div class="modal" id="addPresetModal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-small">
+      <button class="modal-close" id="btnCloseAddPreset">×</button>
+      <h3>Add Custom Source</h3>
+      <div class="form-group">
+        <label for="presetUrl">Flickr URL</label>
+        <input type="text" id="presetUrl" placeholder="https://www.flickr.com/photos/...">
+        <small>Paste a Flickr user or tag URL</small>
+      </div>
+      <div class="form-group">
+        <label for="presetName">Name</label>
+        <input type="text" id="presetName" placeholder="My Photos">
+      </div>
+      <div id="presetPreview" class="preset-preview" style="display: none;">
+        <span class="preset-type"></span>
+        <span class="preset-value"></span>
+      </div>
+      <button class="btn btn-primary btn-block" id="btnSavePreset">
+        Save Preset
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/js/api-client.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
