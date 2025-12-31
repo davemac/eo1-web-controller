@@ -30,7 +30,7 @@ class SettingsManager {
           userId: process.env.FLICKR_USER_ID || ''
         },
         device: {
-          ip: process.env.EO1_IP || '192.168.1.43',
+          ip: process.env.EO1_IP || '',
           port: parseInt(process.env.EO1_PORT) || 12345
         },
         currentSource: null  // Tracks what's currently displayed on EO1
