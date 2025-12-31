@@ -387,6 +387,9 @@ async function deletePreset(id) {
  */
 async function loadPhotos(query, type = 'tag', page = 1) {
   elements.photoGrid.innerHTML = '<div class="photo-grid-empty">Loading...</div>';
+  elements.photoGrid.classList.add('loading');
+  elements.btnPrevPage.disabled = true;
+  elements.btnNextPage.disabled = true;
 
   try {
     let result;
@@ -409,12 +412,15 @@ async function loadPhotos(query, type = 'tag', page = 1) {
   } catch (error) {
     elements.photoGrid.innerHTML = `<div class="photo-grid-empty">Error: ${error.message}</div>`;
     elements.pagination.style.display = 'none';
+  } finally {
+    elements.photoGrid.classList.remove('loading');
   }
 }
 
 // Load albums
 async function loadAlbums(userId) {
   elements.photoGrid.innerHTML = '<div class="photo-grid-empty">Loading albums...</div>';
+  elements.photoGrid.classList.add('loading');
   elements.pagination.style.display = 'none';
 
   try {
@@ -424,6 +430,8 @@ async function loadAlbums(userId) {
     renderAlbums();
   } catch (error) {
     elements.photoGrid.innerHTML = `<div class="photo-grid-empty">Error: ${error.message}</div>`;
+  } finally {
+    elements.photoGrid.classList.remove('loading');
   }
 }
 
@@ -467,6 +475,9 @@ async function openAlbum(album) {
 // Load photos from album
 async function loadAlbumPhotos(albumId, userId, page = 1) {
   elements.photoGrid.innerHTML = '<div class="photo-grid-empty">Loading...</div>';
+  elements.photoGrid.classList.add('loading');
+  elements.btnPrevPage.disabled = true;
+  elements.btnNextPage.disabled = true;
 
   try {
     const result = await API.flickr.getAlbumPhotos(albumId, userId, page);
@@ -478,6 +489,8 @@ async function loadAlbumPhotos(albumId, userId, page = 1) {
   } catch (error) {
     elements.photoGrid.innerHTML = `<div class="photo-grid-empty">Error: ${error.message}</div>`;
     elements.pagination.style.display = 'none';
+  } finally {
+    elements.photoGrid.classList.remove('loading');
   }
 }
 

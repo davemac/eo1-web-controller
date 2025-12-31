@@ -14,6 +14,33 @@ const getFlickr = (req) => {
 };
 
 /**
+ * Transform a Flickr photo object into a standardized format
+ * @param {Object} photo - Raw Flickr photo object
+ * @returns {Object} - Standardized photo object
+ */
+function transformPhoto(photo) {
+  // Get dimensions - prefer original, fall back to large, then medium
+  const width = photo.o_width ? parseInt(photo.o_width) :
+                photo.width_l ? parseInt(photo.width_l) :
+                photo.width_m ? parseInt(photo.width_m) : null;
+  const height = photo.o_height ? parseInt(photo.o_height) :
+                 photo.height_l ? parseInt(photo.height_l) :
+                 photo.height_m ? parseInt(photo.height_m) : null;
+
+  return {
+    id: photo.id,
+    title: photo.title,
+    media: photo.media || 'photo',
+    thumbnailUrl: photo.url_sq || photo.url_m,
+    mediumUrl: photo.url_m,
+    largeUrl: photo.url_l,
+    originalUrl: photo.url_o,
+    width,
+    height
+  };
+}
+
+/**
  * GET /api/flickr/user/:userId/photos
  * Get public photos from a Flickr user
  * Query params: page (default: 1), per_page (default: 24)
@@ -32,27 +59,7 @@ router.get('/user/:userId/photos', async (req, res, next) => {
     const result = await flickr.getUserPhotos(userId, page, perPage);
 
     // Transform response for easier frontend consumption
-    const photos = (result.photos.photo || []).map(photo => {
-      // Get dimensions - prefer original, fall back to large, then medium
-      const width = photo.o_width ? parseInt(photo.o_width) :
-                    photo.width_l ? parseInt(photo.width_l) :
-                    photo.width_m ? parseInt(photo.width_m) : null;
-      const height = photo.o_height ? parseInt(photo.o_height) :
-                     photo.height_l ? parseInt(photo.height_l) :
-                     photo.height_m ? parseInt(photo.height_m) : null;
-
-      return {
-        id: photo.id,
-        title: photo.title,
-        media: photo.media || 'photo',
-        thumbnailUrl: photo.url_sq || photo.url_m,
-        mediumUrl: photo.url_m,
-        largeUrl: photo.url_l,
-        originalUrl: photo.url_o,
-        width,
-        height
-      };
-    });
+    const photos = (result.photos.photo || []).map(transformPhoto);
 
     res.json({
       photos,
@@ -85,27 +92,7 @@ router.get('/search', async (req, res, next) => {
     const result = await flickr.searchByTag(tags, page, perPage);
 
     // Transform response for easier frontend consumption
-    const photos = (result.photos.photo || []).map(photo => {
-      // Get dimensions - prefer original, fall back to large, then medium
-      const width = photo.o_width ? parseInt(photo.o_width) :
-                    photo.width_l ? parseInt(photo.width_l) :
-                    photo.width_m ? parseInt(photo.width_m) : null;
-      const height = photo.o_height ? parseInt(photo.o_height) :
-                     photo.height_l ? parseInt(photo.height_l) :
-                     photo.height_m ? parseInt(photo.height_m) : null;
-
-      return {
-        id: photo.id,
-        title: photo.title,
-        media: photo.media || 'photo',
-        thumbnailUrl: photo.url_sq || photo.url_m,
-        mediumUrl: photo.url_m,
-        largeUrl: photo.url_l,
-        originalUrl: photo.url_o,
-        width,
-        height
-      };
-    });
+    const photos = (result.photos.photo || []).map(transformPhoto);
 
     res.json({
       photos,
@@ -256,27 +243,7 @@ router.get('/album/:albumId/photos', async (req, res, next) => {
     const result = await flickr.getPhotosetPhotos(albumId, userId, page, perPage);
 
     // Transform response
-    const photos = (result.photoset.photo || []).map(photo => {
-      // Get dimensions - prefer original, fall back to large, then medium
-      const width = photo.o_width ? parseInt(photo.o_width) :
-                    photo.width_l ? parseInt(photo.width_l) :
-                    photo.width_m ? parseInt(photo.width_m) : null;
-      const height = photo.o_height ? parseInt(photo.o_height) :
-                     photo.height_l ? parseInt(photo.height_l) :
-                     photo.height_m ? parseInt(photo.height_m) : null;
-
-      return {
-        id: photo.id,
-        title: photo.title,
-        media: photo.media || 'photo',
-        thumbnailUrl: photo.url_sq || photo.url_m,
-        mediumUrl: photo.url_m,
-        largeUrl: photo.url_l,
-        originalUrl: photo.url_o,
-        width,
-        height
-      };
-    });
+    const photos = (result.photoset.photo || []).map(transformPhoto);
 
     res.json({
       photos,
@@ -311,27 +278,7 @@ router.get('/group/:groupId/photos', async (req, res, next) => {
     const result = await flickr.getGroupPhotos(groupId, page, perPage);
 
     // Transform response
-    const photos = (result.photos.photo || []).map(photo => {
-      // Get dimensions - prefer original, fall back to large, then medium
-      const width = photo.o_width ? parseInt(photo.o_width) :
-                    photo.width_l ? parseInt(photo.width_l) :
-                    photo.width_m ? parseInt(photo.width_m) : null;
-      const height = photo.o_height ? parseInt(photo.o_height) :
-                     photo.height_l ? parseInt(photo.height_l) :
-                     photo.height_m ? parseInt(photo.height_m) : null;
-
-      return {
-        id: photo.id,
-        title: photo.title,
-        media: photo.media || 'photo',
-        thumbnailUrl: photo.url_sq || photo.url_m,
-        mediumUrl: photo.url_m,
-        largeUrl: photo.url_l,
-        originalUrl: photo.url_o,
-        width,
-        height
-      };
-    });
+    const photos = (result.photos.photo || []).map(transformPhoto);
 
     res.json({
       photos,
@@ -365,27 +312,7 @@ router.get('/gallery/:galleryId/photos', async (req, res, next) => {
     const result = await flickr.getGalleryPhotos(galleryId, page, perPage);
 
     // Transform response
-    const photos = (result.photos.photo || []).map(photo => {
-      // Get dimensions - prefer original, fall back to large, then medium
-      const width = photo.o_width ? parseInt(photo.o_width) :
-                    photo.width_l ? parseInt(photo.width_l) :
-                    photo.width_m ? parseInt(photo.width_m) : null;
-      const height = photo.o_height ? parseInt(photo.o_height) :
-                     photo.height_l ? parseInt(photo.height_l) :
-                     photo.height_m ? parseInt(photo.height_m) : null;
-
-      return {
-        id: photo.id,
-        title: photo.title,
-        media: photo.media || 'photo',
-        thumbnailUrl: photo.url_sq || photo.url_m,
-        mediumUrl: photo.url_m,
-        largeUrl: photo.url_l,
-        originalUrl: photo.url_o,
-        width,
-        height
-      };
-    });
+    const photos = (result.photos.photo || []).map(transformPhoto);
 
     res.json({
       photos,

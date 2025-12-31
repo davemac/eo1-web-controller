@@ -35,12 +35,12 @@
           <a href="#" target="_blank" class="current-source-link" id="currentSourceLink" style="display: none;">View on Flickr</a>
         </div>
         <div class="current-source-actions">
-          <button class="btn btn-control" id="btnSkip" title="Skip to next">
-            <span class="btn-control-icon">⏭</span>
+          <button class="btn btn-control" id="btnSkip" title="Skip to next" aria-label="Skip to next image">
+            <span class="btn-control-icon" aria-hidden="true">⏭</span>
             <span class="btn-control-label">Skip</span>
           </button>
-          <button class="btn btn-control" id="btnScreenToggle" title="Toggle screen on/off">
-            <span class="btn-control-icon" id="screenIcon">☀️</span>
+          <button class="btn btn-control" id="btnScreenToggle" title="Toggle screen on/off" aria-label="Toggle screen on or off">
+            <span class="btn-control-icon" id="screenIcon" aria-hidden="true">☀️</span>
             <span class="btn-control-label" id="screenLabel">On</span>
           </button>
         </div>
@@ -51,7 +51,7 @@
           Auto
         </label>
         <div class="slider-row" id="brightnessSliderRow">
-          <input type="range" id="brightnessSlider" min="0" max="100" value="50" disabled>
+          <input type="range" id="brightnessSlider" min="0" max="100" value="50" disabled aria-label="Brightness level">
           <span id="brightnessValue">50%</span>
         </div>
       </div>
@@ -61,7 +61,7 @@
     <section class="card">
       <h2>Display Source</h2>
       <div class="source-options">
-        <div class="preset-grid" id="presetGrid">
+        <div class="preset-grid" id="presetGrid" role="list" aria-label="Flickr source presets">
           <!-- Presets will be loaded here -->
         </div>
         <div class="source-actions">
@@ -81,15 +81,15 @@
       </div>
 
       <!-- Photo/Album grid -->
-      <div class="photo-grid" id="photoGrid">
+      <div class="photo-grid" id="photoGrid" role="grid" aria-label="Photo gallery">
         <div class="photo-grid-empty">Select a source above or search for a tag</div>
       </div>
 
-      <div class="pagination" id="pagination" style="display: none;">
-        <button class="btn btn-outline" id="btnPrevPage" disabled>← Prev</button>
-        <span id="pageInfo">Page 1 of 1</span>
-        <button class="btn btn-outline" id="btnNextPage">Next →</button>
-      </div>
+      <nav class="pagination" id="pagination" style="display: none;" aria-label="Photo gallery pagination">
+        <button class="btn btn-outline" id="btnPrevPage" disabled aria-label="Previous page">← Prev</button>
+        <span id="pageInfo" aria-live="polite">Page 1 of 1</span>
+        <button class="btn btn-outline" id="btnNextPage" aria-label="Next page">Next →</button>
+      </nav>
     </section>
 
     <!-- Slideshow Settings -->
