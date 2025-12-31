@@ -154,13 +154,13 @@ These community resources are pre-configured:
 
 1. Click **"+ Add Custom Source"**
 2. Paste a Flickr URL:
-   - User photos: `https://www.flickr.com/photos/username/`
-   - Tag search: `https://www.flickr.com/photos/tags/nature/`
-   - Group pool: `https://www.flickr.com/groups/groupname/pool/`
-   - Gallery: `https://www.flickr.com/photos/username/galleries/12345/`
-   - Album: `https://www.flickr.com/photos/username/albums/12345/`
+   - User photos: `https://www.flickr.com/photos/<username>/`
+   - Tag search: `https://www.flickr.com/photos/tags/<tag>/`
+   - Group pool: `https://www.flickr.com/groups/<group-name>/pool/`
+   - Gallery: `https://www.flickr.com/photos/<username>/galleries/<id>/`
+   - Album: `https://www.flickr.com/photos/<username>/albums/<id>/`
    - Explore: `https://www.flickr.com/explore/`
-   - Search with filters: `https://www.flickr.com/search/?text=nature&orientation=square`
+   - Search: `https://www.flickr.com/search/?text=<query>&orientation=<type>`
 3. Give it a name
 4. Click Save
 
