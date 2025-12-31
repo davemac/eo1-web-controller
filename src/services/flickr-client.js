@@ -238,6 +238,20 @@ class FlickrClient {
   }
 
   /**
+   * Get interesting photos from Flickr Explore
+   * @param {number} page - Page number
+   * @param {number} perPage - Items per page
+   * @returns {Promise<Object>}
+   */
+  async getInterestingPhotos(page = 1, perPage = 24) {
+    return this.request('flickr.interestingness.getList', {
+      page,
+      per_page: Math.min(perPage, 500),
+      extras: 'media,url_sq,url_m,url_l,url_o,original_format,o_dims,width_l,height_l,width_m,height_m'
+    });
+  }
+
+  /**
    * Parse a Flickr URL to extract type and identifier
    * @param {string} url - Flickr URL
    * @returns {Object} - { type: 'user'|'tag'|'group'|'gallery', value: string }
@@ -258,6 +272,11 @@ class FlickrClient {
       }
 
       const path = parsed.pathname;
+
+      // Explore URL: flickr.com/explore/
+      if (path.match(/^\/explore\/?$/i)) {
+        return { type: 'explore', value: 'explore' };
+      }
 
       // Group pool URL: flickr.com/groups/GROUP_ID/pool/
       const groupMatch = path.match(/\/groups\/([^/]+)/i);

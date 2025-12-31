@@ -220,7 +220,8 @@ function updateCurrentSourceDisplay(source) {
     tag: 'Tag',
     user: 'User',
     photo: 'Photo',
-    video: 'Video'
+    video: 'Video',
+    explore: 'Explore'
   };
   elements.currentSourceType.textContent = typeLabels[source.type] || source.type;
 
@@ -290,6 +291,7 @@ function renderPresets() {
       'group': 'Group',
       'gallery': 'Gallery',
       'album': 'Album',
+      'explore': 'Explore',
       'my-photos': 'You',
       'my-albums': 'Albums'
     };
@@ -369,6 +371,11 @@ async function activatePreset(id, preset) {
       state.currentAlbum = null;
       await loadAlbums(flickrSettings.userId);
       showToast('Browsing your albums', 'success');
+    } else if (preset.type === 'explore') {
+      // Get Flickr Explore (interestingness) photos
+      state.currentSearch = { type: 'explore', value: 'explore' };
+      await loadPhotos('explore', 'explore');
+      showToast(`Browsing ${preset.name}`, 'success');
     } else if (preset.type === 'group') {
       // Get group pool photos
       state.currentSearch = { type: 'group', value: preset.groupId };
@@ -431,6 +438,8 @@ async function loadPhotos(query, type = 'tag', page = 1) {
     let result;
     if (type === 'tag') {
       result = await API.flickr.searchByTag(query, page);
+    } else if (type === 'explore') {
+      result = await API.flickr.getExplorePhotos(page);
     } else if (type === 'group') {
       result = await API.flickr.getGroupPhotos(query, page);
     } else if (type === 'gallery') {

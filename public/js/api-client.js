@@ -131,7 +131,13 @@ const API = {
      * Get photos from a gallery
      */
     getGalleryPhotos: (galleryId, page = 1) =>
-      API.request('GET', `/api/flickr/gallery/${encodeURIComponent(galleryId)}/photos?page=${page}`)
+      API.request('GET', `/api/flickr/gallery/${encodeURIComponent(galleryId)}/photos?page=${page}`),
+
+    /**
+     * Get interesting photos from Flickr Explore
+     */
+    getExplorePhotos: (page = 1) =>
+      API.request('GET', `/api/flickr/explore?page=${page}`)
   },
 
   // Settings

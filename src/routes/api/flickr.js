@@ -327,4 +327,32 @@ router.get('/gallery/:galleryId/photos', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/flickr/explore
+ * Get interesting photos from Flickr Explore
+ * Query params: page (default: 1), per_page (default: 24)
+ */
+router.get('/explore', async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const perPage = parseInt(req.query.per_page) || 24;
+
+    const flickr = getFlickr(req);
+    const result = await flickr.getInterestingPhotos(page, perPage);
+
+    // Transform response
+    const photos = (result.photos.photo || []).map(transformPhoto);
+
+    res.json({
+      photos,
+      page: parseInt(result.photos.page),
+      pages: parseInt(result.photos.pages),
+      perPage: parseInt(result.photos.perpage),
+      total: parseInt(result.photos.total)
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

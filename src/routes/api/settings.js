@@ -207,7 +207,9 @@ router.post('/presets', async (req, res, next) => {
       };
 
       // Add the appropriate ID field based on type
-      if (parsed.type === 'tag') {
+      if (parsed.type === 'explore') {
+        // Explore doesn't need any additional fields
+      } else if (parsed.type === 'tag') {
         presetData.tag = parsed.value;
       } else if (parsed.type === 'group') {
         // Groups need NSID - resolve slug to NSID if needed
