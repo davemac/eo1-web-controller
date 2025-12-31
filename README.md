@@ -156,6 +156,7 @@ Looking for more art? Try these Flickr sources:
    - Group pool: `https://www.flickr.com/groups/groupname/pool/`
    - Gallery: `https://www.flickr.com/photos/username/galleries/12345/`
    - Explore: `https://www.flickr.com/explore/`
+   - Search with filters: `https://www.flickr.com/search/?text=nature&orientation=square`
 3. Give it a name
 4. Click Save
 
