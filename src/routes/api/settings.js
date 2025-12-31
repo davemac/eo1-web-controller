@@ -215,8 +215,21 @@ router.post('/presets', async (req, res, next) => {
         presetData.galleryId = parsed.value;
       } else if (parsed.type === 'album') {
         presetData.albumId = parsed.value;
+        // Albums need user ID - resolve username to NSID if needed
+        const flickr = req.app.get('flickrClient');
+        try {
+          presetData.userId = await flickr.resolveUserId(parsed.userId);
+        } catch (err) {
+          return res.status(400).json({ error: `Could not resolve user "${parsed.userId}": ${err.message}` });
+        }
       } else {
-        presetData.userId = parsed.value;
+        // User type - resolve username to NSID if needed
+        const flickr = req.app.get('flickrClient');
+        try {
+          presetData.userId = await flickr.resolveUserId(parsed.value);
+        } catch (err) {
+          return res.status(400).json({ error: `Could not resolve user "${parsed.value}": ${err.message}` });
+        }
       }
     } else if (type && value) {
       // Direct type and value

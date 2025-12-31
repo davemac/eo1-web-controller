@@ -344,9 +344,9 @@ async function activatePreset(id, preset) {
       await loadPhotos(preset.galleryId, 'gallery');
       showToast(`Browsing ${preset.name}`, 'success');
     } else if (preset.type === 'album') {
-      // Get album photos
-      state.currentSearch = { type: 'album', value: preset.albumId };
-      await loadPhotos(preset.albumId, 'album');
+      // Get album photos (needs both album ID and user ID)
+      state.currentSearch = { type: 'album', value: preset.albumId, userId: preset.userId };
+      await loadAlbumPhotos(preset.albumId, preset.userId);
       showToast(`Browsing ${preset.name}`, 'success');
     } else {
       state.currentSearch = { type: 'user', value: preset.userId };

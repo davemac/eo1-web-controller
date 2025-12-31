@@ -150,6 +150,23 @@ class FlickrClient {
   }
 
   /**
+   * Resolve a username to an NSID
+   * @param {string} username - Flickr username or path name
+   * @returns {Promise<string>} - The user's NSID (e.g., "12345678@N00")
+   */
+  async resolveUserId(username) {
+    // If it already looks like an NSID, return it
+    if (username.includes('@')) {
+      return username;
+    }
+
+    // Look up the user by their profile URL
+    const profileUrl = `https://www.flickr.com/photos/${username}/`;
+    const result = await this.lookupUser(profileUrl);
+    return result.user.id;
+  }
+
+  /**
    * Get photos from a group pool
    * @param {string} groupId - Flickr group ID (e.g., "14660092@N20")
    * @param {number} page - Page number
@@ -227,9 +244,13 @@ class FlickrClient {
       }
 
       // Album URL: flickr.com/photos/USERNAME/albums/ALBUM_ID/
-      const albumMatch = path.match(/\/photos\/[^/]+\/albums\/(\d+)/i);
+      const albumMatch = path.match(/\/photos\/([^/]+)\/albums\/(\d+)/i);
       if (albumMatch) {
-        return { type: 'album', value: decodeURIComponent(albumMatch[1]) };
+        return {
+          type: 'album',
+          value: decodeURIComponent(albumMatch[2]),
+          userId: decodeURIComponent(albumMatch[1])
+        };
       }
 
       // Tag URL: flickr.com/photos/tags/TAGNAME
