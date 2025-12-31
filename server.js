@@ -88,7 +88,21 @@ async function startServer() {
     // Get Tailscale IP if available
     let tailscaleIp = null;
     try {
-      tailscaleIp = execSync('tailscale ip -4 2>/dev/null', { encoding: 'utf8' }).trim();
+      // Try common Tailscale CLI locations
+      const tailscalePaths = [
+        'tailscale',  // If in PATH
+        '/Applications/Tailscale.app/Contents/MacOS/Tailscale',  // macOS app
+        '/usr/local/bin/tailscale',  // Homebrew/Linux
+        '/usr/bin/tailscale'  // Linux package
+      ];
+      for (const tsPath of tailscalePaths) {
+        try {
+          tailscaleIp = execSync(`"${tsPath}" ip -4 2>/dev/null`, { encoding: 'utf8' }).trim();
+          if (tailscaleIp) break;
+        } catch (e) {
+          // Try next path
+        }
+      }
     } catch (e) {
       // Tailscale not available or not connected
     }
