@@ -226,6 +226,12 @@ class FlickrClient {
         return { type: 'gallery', value: decodeURIComponent(galleryMatch[1]) };
       }
 
+      // Album URL: flickr.com/photos/USERNAME/albums/ALBUM_ID/
+      const albumMatch = path.match(/\/photos\/[^/]+\/albums\/(\d+)/i);
+      if (albumMatch) {
+        return { type: 'album', value: decodeURIComponent(albumMatch[1]) };
+      }
+
       // Tag URL: flickr.com/photos/tags/TAGNAME
       const tagMatch = path.match(/\/photos\/tags\/([^/]+)/i);
       if (tagMatch) {

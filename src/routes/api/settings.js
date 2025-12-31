@@ -213,13 +213,15 @@ router.post('/presets', async (req, res, next) => {
         presetData.groupId = parsed.value;
       } else if (parsed.type === 'gallery') {
         presetData.galleryId = parsed.value;
+      } else if (parsed.type === 'album') {
+        presetData.albumId = parsed.value;
       } else {
         presetData.userId = parsed.value;
       }
     } else if (type && value) {
       // Direct type and value
-      if (!['tag', 'user', 'group', 'gallery'].includes(type)) {
-        return res.status(400).json({ error: 'Type must be "tag", "user", "group", or "gallery"' });
+      if (!['tag', 'user', 'group', 'gallery', 'album'].includes(type)) {
+        return res.status(400).json({ error: 'Type must be "tag", "user", "group", "gallery", or "album"' });
       }
 
       presetData = {
@@ -233,6 +235,8 @@ router.post('/presets', async (req, res, next) => {
         presetData.groupId = value;
       } else if (type === 'gallery') {
         presetData.galleryId = value;
+      } else if (type === 'album') {
+        presetData.albumId = value;
       } else {
         presetData.userId = value;
       }
