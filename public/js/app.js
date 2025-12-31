@@ -70,10 +70,8 @@ const elements = {
   searchInput: document.getElementById('searchInput'),
   btnSearch: document.getElementById('btnSearch'),
   photoGrid: document.getElementById('photoGrid'),
-  pagination: document.getElementById('pagination'),
-  btnPrevPage: document.getElementById('btnPrevPage'),
-  btnNextPage: document.getElementById('btnNextPage'),
-  pageInfo: document.getElementById('pageInfo'),
+  paginationTop: document.getElementById('paginationTop'),
+  paginationBottom: document.getElementById('paginationBottom'),
   deviceIp: document.getElementById('deviceIp'),
   btnTestConnection: document.getElementById('btnTestConnection'),
   btnScanNetwork: document.getElementById('btnScanNetwork'),
@@ -431,8 +429,7 @@ async function deletePreset(id) {
 async function loadPhotos(query, type = 'tag', page = 1) {
   elements.photoGrid.innerHTML = '<div class="photo-grid-empty">Loading...</div>';
   elements.photoGrid.classList.add('loading');
-  elements.btnPrevPage.disabled = true;
-  elements.btnNextPage.disabled = true;
+  disablePaginationButtons();
 
   try {
     let result;
@@ -456,7 +453,7 @@ async function loadPhotos(query, type = 'tag', page = 1) {
     updatePagination();
   } catch (error) {
     elements.photoGrid.innerHTML = `<div class="photo-grid-empty">Error: ${error.message}</div>`;
-    elements.pagination.style.display = 'none';
+    hidePagination();
   } finally {
     elements.photoGrid.classList.remove('loading');
   }
@@ -466,7 +463,7 @@ async function loadPhotos(query, type = 'tag', page = 1) {
 async function loadAlbums(userId) {
   elements.photoGrid.innerHTML = '<div class="photo-grid-empty">Loading albums...</div>';
   elements.photoGrid.classList.add('loading');
-  elements.pagination.style.display = 'none';
+  hidePagination();
 
   try {
     const result = await API.flickr.getUserAlbums(userId);
@@ -521,8 +518,7 @@ async function openAlbum(album) {
 async function loadAlbumPhotos(albumId, userId, page = 1) {
   elements.photoGrid.innerHTML = '<div class="photo-grid-empty">Loading...</div>';
   elements.photoGrid.classList.add('loading');
-  elements.btnPrevPage.disabled = true;
-  elements.btnNextPage.disabled = true;
+  disablePaginationButtons();
 
   try {
     const result = await API.flickr.getAlbumPhotos(albumId, userId, page);
@@ -533,7 +529,7 @@ async function loadAlbumPhotos(albumId, userId, page = 1) {
     updatePagination();
   } catch (error) {
     elements.photoGrid.innerHTML = `<div class="photo-grid-empty">Error: ${error.message}</div>`;
-    elements.pagination.style.display = 'none';
+    hidePagination();
   } finally {
     elements.photoGrid.classList.remove('loading');
   }
@@ -586,17 +582,37 @@ function renderPhotos() {
   }
 }
 
-// Update pagination
+// Hide both pagination elements
+function hidePagination() {
+  elements.paginationTop.style.display = 'none';
+  elements.paginationBottom.style.display = 'none';
+}
+
+// Disable pagination buttons during loading
+function disablePaginationButtons() {
+  document.querySelectorAll('.pagination .btn-prev-page, .pagination .btn-next-page')
+    .forEach(btn => btn.disabled = true);
+}
+
+// Update pagination (both top and bottom)
 function updatePagination() {
+  const paginationElements = [elements.paginationTop, elements.paginationBottom];
+
   if (state.totalPages <= 1) {
-    elements.pagination.style.display = 'none';
+    paginationElements.forEach(el => el.style.display = 'none');
     return;
   }
 
-  elements.pagination.style.display = 'flex';
-  elements.btnPrevPage.disabled = state.currentPage <= 1;
-  elements.btnNextPage.disabled = state.currentPage >= state.totalPages;
-  elements.pageInfo.textContent = `Page ${state.currentPage} of ${state.totalPages}`;
+  const prevDisabled = state.currentPage <= 1;
+  const nextDisabled = state.currentPage >= state.totalPages;
+  const pageText = `Page ${state.currentPage} of ${state.totalPages}`;
+
+  paginationElements.forEach(el => {
+    el.style.display = 'flex';
+    el.querySelector('.btn-prev-page').disabled = prevDisabled;
+    el.querySelector('.btn-next-page').disabled = nextDisabled;
+    el.querySelector('.page-info').textContent = pageText;
+  });
 }
 
 // ============================================================================
@@ -949,25 +965,29 @@ function setupEventListeners() {
     }
   });
 
-  // Pagination
-  elements.btnPrevPage.addEventListener('click', () => {
-    if (state.currentSearch && state.currentPage > 1) {
-      if (state.currentSearch.type === 'album') {
-        loadAlbumPhotos(state.currentSearch.value, state.currentSearch.userId, state.currentPage - 1);
-      } else {
-        loadPhotos(state.currentSearch.value, state.currentSearch.type, state.currentPage - 1);
+  // Pagination (both top and bottom)
+  document.querySelectorAll('.pagination .btn-prev-page').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (state.currentSearch && state.currentPage > 1) {
+        if (state.currentSearch.type === 'album') {
+          loadAlbumPhotos(state.currentSearch.value, state.currentSearch.userId, state.currentPage - 1);
+        } else {
+          loadPhotos(state.currentSearch.value, state.currentSearch.type, state.currentPage - 1);
+        }
       }
-    }
+    });
   });
 
-  elements.btnNextPage.addEventListener('click', () => {
-    if (state.currentSearch && state.currentPage < state.totalPages) {
-      if (state.currentSearch.type === 'album') {
-        loadAlbumPhotos(state.currentSearch.value, state.currentSearch.userId, state.currentPage + 1);
-      } else {
-        loadPhotos(state.currentSearch.value, state.currentSearch.type, state.currentPage + 1);
+  document.querySelectorAll('.pagination .btn-next-page').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (state.currentSearch && state.currentPage < state.totalPages) {
+        if (state.currentSearch.type === 'album') {
+          loadAlbumPhotos(state.currentSearch.value, state.currentSearch.userId, state.currentPage + 1);
+        } else {
+          loadPhotos(state.currentSearch.value, state.currentSearch.type, state.currentPage + 1);
+        }
       }
-    }
+    });
   });
 
   // Preview modal
