@@ -47,6 +47,13 @@
       "url": "https://www.flickr.com/photos/157826401@N07/",
       "description": "Curated art collection",
       "builtin": true
+    },
+    "explore": {
+      "name": "Flickr Explore",
+      "type": "explore",
+      "url": "https://www.flickr.com/explore/",
+      "description": "Flickr's curated interesting photos",
+      "builtin": true
     }
   }
 }
