@@ -93,6 +93,12 @@ class FlickrClient {
    * @param {number} [searchParams.min_width] - Minimum width
    * @param {number} [searchParams.min_height] - Minimum height
    * @param {number} [searchParams.content_type] - 1=photos, 2=screenshots, 3=other, 4=photos+screenshots
+   * @param {string} [searchParams.sort] - Sort order (date-posted-desc, date-taken-desc, interestingness-desc, relevance)
+   * @param {number} [searchParams.min_taken_date] - Unix timestamp for minimum date taken
+   * @param {boolean} [searchParams.in_gallery] - Only return photos in galleries
+   * @param {boolean} [searchParams.is_getty] - Only return Getty-licensed photos
+   * @param {boolean} [searchParams.is_commons] - Only return Flickr Commons photos
+   * @param {string} [searchParams.styles] - Comma-separated styles (blackandwhite, depthoffield, minimalism, pattern)
    * @param {number} page - Page number
    * @param {number} perPage - Items per page
    * @returns {Promise<Object>}
@@ -103,7 +109,7 @@ class FlickrClient {
       per_page: Math.min(perPage, 500),
       page,
       extras: 'media,url_sq,url_m,url_l,url_o,original_format,o_dims,width_l,height_l,width_m,height_m',
-      sort: 'relevance'  // Most relevant for text search
+      sort: searchParams.sort || 'relevance'  // Use provided sort or default to relevance
     };
 
     // Add optional filters
@@ -121,6 +127,22 @@ class FlickrClient {
     }
     if (searchParams.content_type) {
       params.content_type = searchParams.content_type;
+    }
+    if (searchParams.min_taken_date) {
+      params.min_taken_date = searchParams.min_taken_date;
+    }
+    // Gallery/quality filters
+    if (searchParams.in_gallery) {
+      params.in_gallery = 1;
+    }
+    if (searchParams.is_getty) {
+      params.is_getty = 1;
+    }
+    if (searchParams.is_commons) {
+      params.is_commons = 1;
+    }
+    if (searchParams.styles) {
+      params.styles = searchParams.styles;
     }
 
     return this.request('flickr.photos.search', params);
@@ -351,6 +373,39 @@ class FlickrClient {
           } else if (types.includes(2)) {
             searchParams.content_type = 2;  // screenshots only
           }
+        }
+
+        // Sort order (interestingness-desc, date-posted-desc, date-taken-desc, relevance)
+        const sort = params.get('sort');
+        if (sort) {
+          searchParams.sort = sort;
+        }
+
+        // Date filters
+        const minTakenDate = params.get('min_taken_date');
+        if (minTakenDate) {
+          searchParams.min_taken_date = parseInt(minTakenDate);
+        }
+
+        // Gallery/quality filters
+        const inGallery = params.get('in_gallery');
+        if (inGallery === '1' || inGallery === 'true') {
+          searchParams.in_gallery = true;
+        }
+
+        const isGetty = params.get('is_getty');
+        if (isGetty === '1' || isGetty === 'true') {
+          searchParams.is_getty = true;
+        }
+
+        const isCommons = params.get('is_commons');
+        if (isCommons === '1' || isCommons === 'true') {
+          searchParams.is_commons = true;
+        }
+
+        const styles = params.get('styles');
+        if (styles) {
+          searchParams.styles = styles;
         }
 
         return {

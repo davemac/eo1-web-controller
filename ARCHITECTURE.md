@@ -184,7 +184,20 @@ const state = {
   albums: [],            // Current album list
   currentAlbum: null,    // Selected album
   selectedPhoto: null,   // Photo in preview modal
-  flickrUserId: null     // User's Flickr ID
+  flickrUserId: null,    // User's Flickr ID
+  filters: {             // Search filter toggles
+    portrait: true,      // orientation: 'portrait'
+    minSize: true,       // min_width/min_height: 1024
+    recent: true,        // min_taken_date: 3 months ago
+    interesting: false,  // sort: 'interestingness-desc'
+    inGallery: false,    // in_gallery: true
+    isGetty: false,      // is_getty: true
+    isCommons: false,    // is_commons: true
+    styleBW: false,      // styles: 'blackandwhite'
+    styleDOF: false,     // styles: 'depthoffield'
+    styleMinimal: false, // styles: 'minimalism'
+    stylePattern: false  // styles: 'pattern'
+  }
 };
 ```
 
@@ -202,6 +215,9 @@ All interactive elements are cached in an `elements` object at startup for perfo
 | `openPreview(photo)` | Show photo in modal with dimensions |
 | `displayOnEO1()` | Send photo to device (with landscape warning) |
 | `loadFlickrSettings()` | Populate settings form |
+| `buildSearchParams(query)` | Build API params from filter state |
+| `syncFiltersToUI()` | Update filter checkboxes from state |
+| `onFilterChange()` | Handle filter toggle, reload photos |
 
 ### UI Components
 
@@ -215,6 +231,13 @@ All interactive elements are cached in an `elements` object at startup for perfo
 - Built-in presets (protected from deletion)
 - Custom presets (with delete button)
 - "+ Add Custom Source" button
+
+**Filter Bar**
+- Appears above photo grid when searching or using tag presets
+- Three rows: Display, Quality, Style filters
+- Defaults: Portrait, Min 1024px, Last 3 months enabled
+- Changes trigger immediate photo reload
+- Hidden for Community Art preset (shows all content unfiltered)
 
 **Photo Grid**
 - 3-4 column responsive grid
@@ -295,8 +318,8 @@ All other settings (Flickr API key, device IP, etc.) are configured via the web 
 
 ### Built-in Presets (`config/default.json`)
 Pre-configured community sources that cannot be deleted:
-- Community Art (tag: electricobjectslives)
-- Video Loops (tag: jadsmp4s)
+- Community Art (tag: electricobjectslives) - filters disabled by default
+- Flickr Explore (interestingness)
 - crushingcodes Gallery (user: 157826401@N07)
 
 ## Error Handling

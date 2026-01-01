@@ -35,7 +35,8 @@ Open http://localhost:3000 and configure your Flickr API key in Settings.
 - **Network Scanner**: Find EO1 devices on your network
 
 ### Flickr Browser
-- **Multiple Source Types**: Browse user photos, tags, groups, galleries, and albums
+- **Multiple Source Types**: Browse user photos, tags, groups, galleries, albums, and search results
+- **Smart Filters**: Toggle filters for portrait orientation, minimum size (1024px), recency (last 3 months), interestingness, quality indicators (Getty, Commons, in gallery), and style tags (B&W, depth of field, minimal, pattern)
 - **Portrait Detection**: Photos are analysed for orientation - portrait images (optimised for EO1's vertical display) are highlighted with a green border
 - **Landscape Warning**: When selecting a landscape image, you're warned it may not display optimally
 - **Preview Before Display**: Click any thumbnail to see a larger preview with dimensions and orientation info
@@ -43,7 +44,7 @@ Open http://localhost:3000 and configure your Flickr API key in Settings.
 
 ### Presets
 - **Built-in Community Sources**: Pre-configured access to community art collections
-- **Custom Sources**: Save any Flickr URL as a preset (users, tags, groups, galleries, albums)
+- **Custom Sources**: Save any Flickr URL as a preset (users, tags, groups, galleries, albums, searches)
 - **Delete Custom Presets**: Remove presets you no longer need
 
 ### Now Displaying
@@ -142,8 +143,7 @@ These community resources are pre-configured:
 | Preset | Type | Description |
 |--------|------|-------------|
 | **Flickr Explore** | Explore | [Flickr's curated interesting photos](https://www.flickr.com/explore/) - daily updated selection |
-| **Community Art** | Tag | Photos tagged [`electricobjectslives`](https://www.flickr.com/photos/tags/electricobjectslives/) - shared by EO1 owners |
-| **Video Loops** | Tag | Photos tagged [`jadsmp4s`](https://www.flickr.com/photos/tags/jadsmp4s/) - ~160 MP4 video loops |
+| **Community Art** | Tag | Photos tagged [`electricobjectslives`](https://www.flickr.com/photos/tags/electricobjectslives/) - shared by EO1 owners (no filters applied) |
 | **crushingcodes Gallery** | User | [Curated art collection](https://www.flickr.com/photos/157826401@N07/) by crushingcodes |
 
 ### More Community Resources
@@ -163,6 +163,40 @@ These community resources are pre-configured:
    - Search: `https://www.flickr.com/search/?text=<query>&orientation=<type>`
 3. Give it a name
 4. Click Save
+
+### Advanced Search Presets
+
+You can create powerful presets by copying advanced search URLs from Flickr, or use the built-in filter bar when browsing.
+
+**Available Filters:**
+
+| Filter | Description |
+|--------|-------------|
+| Portrait | Only show portrait orientation images |
+| Min 1024px | Minimum width/height of 1024 pixels |
+| Last 3 months | Only recent photos (min_taken_date) |
+| By interesting | Sort by Flickr's interestingness algorithm |
+| In gallery | Photos that have been added to galleries |
+| Getty | Getty Images collection |
+| Commons | Flickr Commons (museums, libraries, archives) |
+| B&W | Black and white style |
+| Depth of field | Shallow depth of field style |
+| Minimal | Minimalist style |
+| Pattern | Pattern/texture style |
+
+**Creating from Flickr URL:**
+
+1. Go to [Flickr Search](https://www.flickr.com/search/)
+2. Search for a term and apply filters
+3. Copy the URL from your browser
+4. Click "+ Add Custom Source" and paste the URL
+
+Example URL for portrait nature photos (1024px minimum, sorted by interestingness):
+```
+https://www.flickr.com/search/?video_content_types=0%2C1%2C2%2C3&content_types=0%2C2&height=1024&width=1024&dimension_search_mode=min&orientation=portrait&view_all=1&text=nature&sort=interestingness-desc&min_taken_date=1759240800
+```
+
+The app parses these search parameters and applies them when browsing, giving you a curated feed of images optimised for the EO1's portrait display.
 
 ## Portrait vs Landscape
 

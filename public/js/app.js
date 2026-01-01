@@ -32,7 +32,21 @@ const state = {
   albums: [],
   currentAlbum: null,
   selectedPhoto: null,
-  flickrUserId: null
+  flickrUserId: null,
+  // Filter state - defaults for EO1 display
+  filters: {
+    portrait: true,      // orientation: 'portrait'
+    minSize: true,       // min_width/min_height: 1024
+    recent: true,        // min_taken_date: 3 months ago
+    interesting: false,  // sort: 'interestingness-desc'
+    inGallery: false,    // in_gallery: true
+    isGetty: false,      // is_getty: true
+    isCommons: false,    // is_commons: true
+    styleBW: false,      // styles includes 'blackandwhite'
+    styleDOF: false,     // styles includes 'depthoffield'
+    styleMinimal: false, // styles includes 'minimalism'
+    stylePattern: false  // styles includes 'pattern'
+  }
 };
 
 // ============================================================================
@@ -100,7 +114,34 @@ const elements = {
   presetName: document.getElementById('presetName'),
   presetPreview: document.getElementById('presetPreview'),
   btnSavePreset: document.getElementById('btnSavePreset'),
-  toastContainer: document.getElementById('toastContainer')
+  toastContainer: document.getElementById('toastContainer'),
+  // Filter elements
+  filterBar: document.getElementById('filterBar'),
+  filterPortrait: document.getElementById('filterPortrait'),
+  filterMinSize: document.getElementById('filterMinSize'),
+  filterRecent: document.getElementById('filterRecent'),
+  filterInteresting: document.getElementById('filterInteresting'),
+  filterGallery: document.getElementById('filterGallery'),
+  filterGetty: document.getElementById('filterGetty'),
+  filterCommons: document.getElementById('filterCommons'),
+  filterBW: document.getElementById('filterBW'),
+  filterDOF: document.getElementById('filterDOF'),
+  filterMinimal: document.getElementById('filterMinimal'),
+  filterPattern: document.getElementById('filterPattern'),
+  // Preset filter elements
+  presetUseFilters: document.getElementById('presetUseFilters'),
+  presetFilterOptions: document.getElementById('presetFilterOptions'),
+  presetFilterPortrait: document.getElementById('presetFilterPortrait'),
+  presetFilterMinSize: document.getElementById('presetFilterMinSize'),
+  presetFilterRecent: document.getElementById('presetFilterRecent'),
+  presetFilterInteresting: document.getElementById('presetFilterInteresting'),
+  presetFilterGallery: document.getElementById('presetFilterGallery'),
+  presetFilterGetty: document.getElementById('presetFilterGetty'),
+  presetFilterCommons: document.getElementById('presetFilterCommons'),
+  presetFilterBW: document.getElementById('presetFilterBW'),
+  presetFilterDOF: document.getElementById('presetFilterDOF'),
+  presetFilterMinimal: document.getElementById('presetFilterMinimal'),
+  presetFilterPattern: document.getElementById('presetFilterPattern')
 };
 
 // ============================================================================
@@ -189,6 +230,145 @@ function updateStatus(connected) {
   } else {
     dot.className = 'status-dot disconnected';
     text.textContent = 'Disconnected';
+  }
+}
+
+// ============================================================================
+// Filter Functions
+// ============================================================================
+
+/**
+ * Build searchParams object from current filter state
+ * @param {string} baseQuery - The text query to search for
+ * @returns {Object} - searchParams object for advancedSearch API
+ */
+function buildSearchParams(baseQuery) {
+  const params = { text: baseQuery };
+  const { filters } = state;
+
+  if (filters.portrait) params.orientation = 'portrait';
+  if (filters.minSize) {
+    params.min_width = 1024;
+    params.min_height = 1024;
+  }
+  if (filters.recent) {
+    // 3 months ago in Unix timestamp
+    params.min_taken_date = Math.floor(Date.now() / 1000) - (90 * 24 * 60 * 60);
+  }
+  if (filters.interesting) params.sort = 'interestingness-desc';
+  if (filters.inGallery) params.in_gallery = true;
+  if (filters.isGetty) params.is_getty = true;
+  if (filters.isCommons) params.is_commons = true;
+
+  const styles = [];
+  if (filters.styleBW) styles.push('blackandwhite');
+  if (filters.styleDOF) styles.push('depthoffield');
+  if (filters.styleMinimal) styles.push('minimalism');
+  if (filters.stylePattern) styles.push('pattern');
+  if (styles.length) params.styles = styles.join(',');
+
+  return params;
+}
+
+/**
+ * Sync filter checkboxes to match current state
+ */
+function syncFiltersToUI() {
+  const { filters } = state;
+  elements.filterPortrait.checked = filters.portrait;
+  elements.filterMinSize.checked = filters.minSize;
+  elements.filterRecent.checked = filters.recent;
+  elements.filterInteresting.checked = filters.interesting;
+  elements.filterGallery.checked = filters.inGallery;
+  elements.filterGetty.checked = filters.isGetty;
+  elements.filterCommons.checked = filters.isCommons;
+  elements.filterBW.checked = filters.styleBW;
+  elements.filterDOF.checked = filters.styleDOF;
+  elements.filterMinimal.checked = filters.styleMinimal;
+  elements.filterPattern.checked = filters.stylePattern;
+}
+
+/**
+ * Read filter checkboxes and update state
+ */
+function syncUIToFilters() {
+  state.filters.portrait = elements.filterPortrait.checked;
+  state.filters.minSize = elements.filterMinSize.checked;
+  state.filters.recent = elements.filterRecent.checked;
+  state.filters.interesting = elements.filterInteresting.checked;
+  state.filters.inGallery = elements.filterGallery.checked;
+  state.filters.isGetty = elements.filterGetty.checked;
+  state.filters.isCommons = elements.filterCommons.checked;
+  state.filters.styleBW = elements.filterBW.checked;
+  state.filters.styleDOF = elements.filterDOF.checked;
+  state.filters.styleMinimal = elements.filterMinimal.checked;
+  state.filters.stylePattern = elements.filterPattern.checked;
+}
+
+/**
+ * Set filter state from a preset's searchParams
+ * @param {Object} searchParams - The preset's searchParams object
+ */
+function setFiltersFromSearchParams(searchParams) {
+  if (!searchParams) {
+    // Reset to defaults
+    state.filters = {
+      portrait: true,
+      minSize: true,
+      recent: true,
+      interesting: false,
+      inGallery: false,
+      isGetty: false,
+      isCommons: false,
+      styleBW: false,
+      styleDOF: false,
+      styleMinimal: false,
+      stylePattern: false
+    };
+  } else {
+    state.filters.portrait = searchParams.orientation === 'portrait';
+    state.filters.minSize = searchParams.min_width >= 1024 || searchParams.min_height >= 1024;
+    state.filters.recent = !!searchParams.min_taken_date;
+    state.filters.interesting = searchParams.sort === 'interestingness-desc';
+    state.filters.inGallery = !!searchParams.in_gallery;
+    state.filters.isGetty = !!searchParams.is_getty;
+    state.filters.isCommons = !!searchParams.is_commons;
+
+    const styles = searchParams.styles ? searchParams.styles.split(',') : [];
+    state.filters.styleBW = styles.includes('blackandwhite');
+    state.filters.styleDOF = styles.includes('depthoffield');
+    state.filters.styleMinimal = styles.includes('minimalism');
+    state.filters.stylePattern = styles.includes('pattern');
+  }
+  syncFiltersToUI();
+}
+
+/**
+ * Show or hide the filter bar
+ * @param {boolean} show - Whether to show the filter bar
+ */
+function showFilterBar(show) {
+  elements.filterBar.style.display = show ? 'block' : 'none';
+}
+
+/**
+ * Handle filter checkbox change - reload photos with new filters
+ */
+function onFilterChange() {
+  syncUIToFilters();
+  // Reload current search from page 1 with new filters
+  if (state.currentSearch) {
+    if (state.currentSearch.type === 'tag') {
+      // Convert tag search to advanced search with filters
+      const searchParams = buildSearchParams(state.currentSearch.value);
+      state.currentSearch = { type: 'search', value: state.currentSearch.value, searchParams };
+      loadPhotos(searchParams, 'search', 1);
+    } else if (state.currentSearch.type === 'search') {
+      // Update searchParams with new filters
+      const searchParams = buildSearchParams(state.currentSearch.value);
+      state.currentSearch.searchParams = searchParams;
+      loadPhotos(searchParams, 'search', 1);
+    }
   }
 }
 
@@ -325,8 +505,23 @@ async function activatePreset(id, preset) {
   // Load photos from this preset
   try {
     if (preset.type === 'tag') {
-      state.currentSearch = { type: 'tag', value: preset.tag };
-      await loadPhotos(preset.tag, 'tag');
+      // Skip filters for built-in community presets
+      const noFilterPresets = ['community'];
+      const useFilters = !noFilterPresets.includes(id);
+
+      if (useFilters) {
+        // Convert tag search to advanced search with current filters
+        const searchParams = buildSearchParams(preset.tag);
+        state.currentSearch = { type: 'search', value: preset.tag, searchParams };
+        showFilterBar(true);
+        syncFiltersToUI();
+        await loadPhotos(searchParams, 'search');
+      } else {
+        // Use simple tag search without filters
+        state.currentSearch = { type: 'tag', value: preset.tag };
+        showFilterBar(false);
+        await loadPhotos(preset.tag, 'tag');
+      }
 
       // Also update the EO1 device
       await API.device.setTag(preset.tag, preset.name);
@@ -354,6 +549,7 @@ async function activatePreset(id, preset) {
       state.flickrUserId = flickrSettings.userId;
       state.currentAlbum = null;
       state.currentSearch = { type: 'user', value: flickrSettings.userId };
+      showFilterBar(false);
       await loadPhotos(flickrSettings.userId, 'user');
       showToast('Browsing your photos', 'success');
     } else if (preset.type === 'my-albums') {
@@ -369,35 +565,43 @@ async function activatePreset(id, preset) {
       }
       state.flickrUserId = flickrSettings.userId;
       state.currentAlbum = null;
+      showFilterBar(false);
       await loadAlbums(flickrSettings.userId);
       showToast('Browsing your albums', 'success');
     } else if (preset.type === 'explore') {
       // Get Flickr Explore (interestingness) photos
       state.currentSearch = { type: 'explore', value: 'explore' };
+      showFilterBar(false);
       await loadPhotos('explore', 'explore');
       showToast(`Browsing ${preset.name}`, 'success');
     } else if (preset.type === 'search') {
       // Advanced text search with filters
+      setFiltersFromSearchParams(preset.searchParams);
       state.currentSearch = { type: 'search', value: preset.searchParams.text, searchParams: preset.searchParams };
+      showFilterBar(true);
       await loadPhotos(preset.searchParams, 'search');
       showToast(`Browsing ${preset.name}`, 'success');
     } else if (preset.type === 'group') {
       // Get group pool photos
       state.currentSearch = { type: 'group', value: preset.groupId };
+      showFilterBar(false);
       await loadPhotos(preset.groupId, 'group');
       showToast(`Browsing ${preset.name}`, 'success');
     } else if (preset.type === 'gallery') {
       // Get gallery photos
       state.currentSearch = { type: 'gallery', value: preset.galleryId };
+      showFilterBar(false);
       await loadPhotos(preset.galleryId, 'gallery');
       showToast(`Browsing ${preset.name}`, 'success');
     } else if (preset.type === 'album') {
       // Get album photos (needs both album ID and user ID)
       state.currentSearch = { type: 'album', value: preset.albumId, userId: preset.userId };
+      showFilterBar(false);
       await loadAlbumPhotos(preset.albumId, preset.userId);
       showToast(`Browsing ${preset.name}`, 'success');
     } else {
       state.currentSearch = { type: 'user', value: preset.userId };
+      showFilterBar(false);
       await loadPhotos(preset.userId, 'user');
       showToast(`Browsing ${preset.name}`, 'success');
     }
@@ -766,7 +970,36 @@ async function savePreset() {
   }
 
   try {
-    const result = await API.settings.addPreset({ url, name });
+    const presetData = { url, name };
+
+    // If "Apply filters" is checked, build searchParams from preset filter checkboxes
+    if (elements.presetUseFilters.checked) {
+      const searchParams = {};
+
+      if (elements.presetFilterPortrait.checked) searchParams.orientation = 'portrait';
+      if (elements.presetFilterMinSize.checked) {
+        searchParams.min_width = 1024;
+        searchParams.min_height = 1024;
+      }
+      if (elements.presetFilterRecent.checked) {
+        searchParams.min_taken_date = Math.floor(Date.now() / 1000) - (90 * 24 * 60 * 60);
+      }
+      if (elements.presetFilterInteresting.checked) searchParams.sort = 'interestingness-desc';
+      if (elements.presetFilterGallery.checked) searchParams.in_gallery = true;
+      if (elements.presetFilterGetty.checked) searchParams.is_getty = true;
+      if (elements.presetFilterCommons.checked) searchParams.is_commons = true;
+
+      const styles = [];
+      if (elements.presetFilterBW.checked) styles.push('blackandwhite');
+      if (elements.presetFilterDOF.checked) styles.push('depthoffield');
+      if (elements.presetFilterMinimal.checked) styles.push('minimalism');
+      if (elements.presetFilterPattern.checked) styles.push('pattern');
+      if (styles.length) searchParams.styles = styles.join(',');
+
+      presetData.searchParams = searchParams;
+    }
+
+    const result = await API.settings.addPreset(presetData);
     state.presets[result.preset.id] = result.preset;
     renderPresets();
     closeAddPresetModal();
@@ -958,14 +1191,34 @@ function setupEventListeners() {
   elements.presetUrl.addEventListener('input', parsePresetUrl);
   elements.btnSavePreset.addEventListener('click', savePreset);
 
+  // Preset filter toggle
+  elements.presetUseFilters.addEventListener('change', () => {
+    elements.presetFilterOptions.style.display = elements.presetUseFilters.checked ? 'block' : 'none';
+  });
+
+  // Filter checkboxes
+  const filterCheckboxes = [
+    elements.filterPortrait, elements.filterMinSize, elements.filterRecent,
+    elements.filterInteresting, elements.filterGallery, elements.filterGetty,
+    elements.filterCommons, elements.filterBW, elements.filterDOF,
+    elements.filterMinimal, elements.filterPattern
+  ];
+  filterCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', onFilterChange);
+  });
+
   // Search
   elements.btnSearch.addEventListener('click', () => {
     const query = elements.searchInput.value.trim();
     if (query) {
-      state.currentSearch = { type: 'tag', value: query };
+      // Use advanced search with current filters
+      const searchParams = buildSearchParams(query);
+      state.currentSearch = { type: 'search', value: query, searchParams };
       state.activePreset = null;
       renderPresets();
-      loadPhotos(query, 'tag');
+      showFilterBar(true);
+      syncFiltersToUI();
+      loadPhotos(searchParams, 'search');
     }
   });
 
@@ -981,6 +1234,9 @@ function setupEventListeners() {
       if (state.currentSearch && state.currentPage > 1) {
         if (state.currentSearch.type === 'album') {
           loadAlbumPhotos(state.currentSearch.value, state.currentSearch.userId, state.currentPage - 1);
+        } else if (state.currentSearch.type === 'search') {
+          // Advanced search needs full searchParams object, not just the text value
+          loadPhotos(state.currentSearch.searchParams, state.currentSearch.type, state.currentPage - 1);
         } else {
           loadPhotos(state.currentSearch.value, state.currentSearch.type, state.currentPage - 1);
         }
@@ -993,6 +1249,9 @@ function setupEventListeners() {
       if (state.currentSearch && state.currentPage < state.totalPages) {
         if (state.currentSearch.type === 'album') {
           loadAlbumPhotos(state.currentSearch.value, state.currentSearch.userId, state.currentPage + 1);
+        } else if (state.currentSearch.type === 'search') {
+          // Advanced search needs full searchParams object, not just the text value
+          loadPhotos(state.currentSearch.searchParams, state.currentSearch.type, state.currentPage + 1);
         } else {
           loadPhotos(state.currentSearch.value, state.currentSearch.type, state.currentPage + 1);
         }
@@ -1105,6 +1364,9 @@ async function init() {
   populateHourDropdowns();
   setupCollapsibles();
   setupEventListeners();
+
+  // Initialize filter checkboxes to match default state
+  syncFiltersToUI();
 
   // Load data (skip connection check - it can crash the EO1 app)
   await Promise.all([

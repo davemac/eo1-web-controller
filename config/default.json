@@ -33,13 +33,6 @@
       "description": "Shared art from EO1 community",
       "builtin": true
     },
-    "videos": {
-      "name": "Video Loops",
-      "type": "tag",
-      "tag": "jadsmp4s",
-      "description": "~160 MP4 video loops",
-      "builtin": true
-    },
     "crushingcodes": {
       "name": "crushingcodes Gallery",
       "type": "user",
