@@ -63,7 +63,7 @@ class FlickrClient {
       user_id: userId,
       per_page: Math.min(perPage, 500),
       page,
-      extras: 'media,url_sq,url_m,url_l,url_o,original_format,o_dims,width_l,height_l,width_m,height_m',
+      extras: 'media,url_sq,url_n,url_m,url_l,url_o,original_format,o_dims,width_l,height_l,width_m,height_m',
       sort: 'date-posted-desc'  // Newest first, matches Flickr website
     });
   }
@@ -80,7 +80,7 @@ class FlickrClient {
       tags,
       per_page: Math.min(perPage, 500),
       page,
-      extras: 'media,url_sq,url_m,url_l,url_o,original_format,o_dims,width_l,height_l,width_m,height_m',
+      extras: 'media,url_sq,url_n,url_m,url_l,url_o,original_format,o_dims,width_l,height_l,width_m,height_m',
       sort: 'date-posted-desc'  // Newest first
     });
   }
@@ -108,7 +108,7 @@ class FlickrClient {
       text: searchParams.text,
       per_page: Math.min(perPage, 500),
       page,
-      extras: 'media,url_sq,url_m,url_l,url_o,original_format,o_dims,width_l,height_l,width_m,height_m',
+      extras: 'media,url_sq,url_n,url_m,url_l,url_o,original_format,o_dims,width_l,height_l,width_m,height_m',
       sort: searchParams.sort || 'relevance'  // Use provided sort or default to relevance
     };
 

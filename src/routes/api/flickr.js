@@ -32,7 +32,7 @@ function transformPhoto(photo) {
     owner: photo.owner,
     title: photo.title,
     media: photo.media || 'photo',
-    thumbnailUrl: photo.url_sq || photo.url_m,
+    thumbnailUrl: photo.url_n || photo.url_m || photo.url_sq,
     mediumUrl: photo.url_m,
     largeUrl: photo.url_l,
     originalUrl: photo.url_o,
@@ -257,7 +257,7 @@ router.get('/user/:userId/albums', async (req, res, next) => {
       videoCount: parseInt(album.videos),
       primaryPhoto: {
         id: album.primary,
-        thumbnailUrl: album.primary_photo_extras ? album.primary_photo_extras.url_sq : null,
+        thumbnailUrl: album.primary_photo_extras ? (album.primary_photo_extras.url_m || album.primary_photo_extras.url_sq) : null,
         mediumUrl: album.primary_photo_extras ? album.primary_photo_extras.url_m : null
       }
     }));
