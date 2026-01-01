@@ -115,7 +115,10 @@ router.get('/search', async (req, res, next) => {
  */
 router.post('/search/advanced', async (req, res, next) => {
   try {
-    const { text, orientation, min_width, min_height, content_type } = req.body;
+    const {
+      text, orientation, min_width, min_height, content_type,
+      sort, min_taken_date, in_gallery, is_getty, is_commons, styles
+    } = req.body;
     const page = parseInt(req.query.page) || 1;
     const perPage = parseInt(req.query.per_page) || 24;
 
@@ -128,6 +131,12 @@ router.post('/search/advanced', async (req, res, next) => {
     if (min_width) searchParams.min_width = parseInt(min_width);
     if (min_height) searchParams.min_height = parseInt(min_height);
     if (content_type) searchParams.content_type = parseInt(content_type);
+    if (sort) searchParams.sort = sort;
+    if (min_taken_date) searchParams.min_taken_date = parseInt(min_taken_date);
+    if (in_gallery) searchParams.in_gallery = true;
+    if (is_getty) searchParams.is_getty = true;
+    if (is_commons) searchParams.is_commons = true;
+    if (styles) searchParams.styles = styles;
 
     const flickr = getFlickr(req);
     const result = await flickr.advancedSearch(searchParams, page, perPage);

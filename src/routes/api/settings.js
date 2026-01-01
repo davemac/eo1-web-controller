@@ -185,7 +185,7 @@ router.get('/presets', async (req, res, next) => {
  */
 router.post('/presets', async (req, res, next) => {
   try {
-    const { name, url, type, value } = req.body;
+    const { name, url, type, value, searchParams: bodySearchParams } = req.body;
 
     if (!name || name.length > 50) {
       return res.status(400).json({ error: 'Name is required (max 50 characters)' });
@@ -211,9 +211,16 @@ router.post('/presets', async (req, res, next) => {
         // Explore doesn't need any additional fields
       } else if (parsed.type === 'search') {
         // Advanced search - store the search parameters
-        presetData.searchParams = parsed.searchParams;
+        // Merge URL-parsed params with any passed in request body
+        presetData.searchParams = { ...parsed.searchParams, ...bodySearchParams };
       } else if (parsed.type === 'tag') {
-        presetData.tag = parsed.value;
+        // If filters are provided, convert to search type
+        if (bodySearchParams && Object.keys(bodySearchParams).length > 0) {
+          presetData.type = 'search';
+          presetData.searchParams = { text: parsed.value, ...bodySearchParams };
+        } else {
+          presetData.tag = parsed.value;
+        }
       } else if (parsed.type === 'group') {
         // Groups need NSID - resolve slug to NSID if needed
         const flickr = req.app.get('flickrClient');

@@ -60,6 +60,16 @@
     <!-- Source Selection & Browser -->
     <section class="card">
       <h2>Display Source</h2>
+
+      <!-- Search Flickr -->
+      <div class="search-section">
+        <label class="search-label">Display a Flickr tag</label>
+        <div class="search-bar">
+          <input type="text" id="searchInput" placeholder="e.g., landscape, art, nature">
+          <button class="btn btn-primary" id="btnSearch">Search</button>
+        </div>
+      </div>
+
       <div class="source-options">
         <div class="preset-grid" id="presetGrid" role="list" aria-label="Flickr source presets">
           <!-- Presets will be loaded here -->
@@ -71,12 +81,49 @@
         </div>
       </div>
 
-      <!-- Search Flickr -->
-      <div class="search-section">
-        <label class="search-label">Search all of Flickr by tag</label>
-        <div class="search-bar">
-          <input type="text" id="searchInput" placeholder="e.g., landscape, art, nature">
-          <button class="btn btn-primary" id="btnSearch">Search</button>
+      <!-- Filter Controls -->
+      <div class="filter-bar" id="filterBar" style="display: none;">
+        <div class="filter-row">
+          <span class="filter-label">Display:</span>
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filterPortrait" checked> Portrait
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filterMinSize" checked> Min 1024px
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filterRecent" checked> Last 3 months
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filterInteresting"> By interesting
+          </label>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Quality:</span>
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filterGallery"> In gallery
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filterGetty"> Getty
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filterCommons"> Commons
+          </label>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Style:</span>
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filterBW"> B&W
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filterDOF"> Depth of field
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filterMinimal"> Minimal
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filterPattern"> Pattern
+          </label>
         </div>
       </div>
 
@@ -229,6 +276,52 @@
       <div id="presetPreview" class="preset-preview" style="display: none;">
         <span class="preset-type"></span>
         <span class="preset-value"></span>
+      </div>
+      <div class="preset-filters">
+        <label class="filter-header">
+          <input type="checkbox" id="presetUseFilters"> Apply filters to this source
+        </label>
+        <div class="preset-filter-options" id="presetFilterOptions" style="display: none;">
+          <div class="filter-row">
+            <label class="filter-checkbox">
+              <input type="checkbox" id="presetFilterPortrait" checked> Portrait
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" id="presetFilterMinSize" checked> Min 1024px
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" id="presetFilterRecent" checked> Last 3 months
+            </label>
+          </div>
+          <div class="filter-row">
+            <label class="filter-checkbox">
+              <input type="checkbox" id="presetFilterInteresting"> By interesting
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" id="presetFilterGallery"> In gallery
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" id="presetFilterGetty"> Getty
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" id="presetFilterCommons"> Commons
+            </label>
+          </div>
+          <div class="filter-row">
+            <label class="filter-checkbox">
+              <input type="checkbox" id="presetFilterBW"> B&W
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" id="presetFilterDOF"> Depth of field
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" id="presetFilterMinimal"> Minimal
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" id="presetFilterPattern"> Pattern
+            </label>
+          </div>
+        </div>
       </div>
       <button class="btn btn-primary btn-block" id="btnSavePreset">
         Save Preset
