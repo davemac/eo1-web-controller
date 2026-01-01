@@ -33,7 +33,8 @@ class SettingsManager {
           ip: process.env.EO1_IP || '',
           port: parseInt(process.env.EO1_PORT) || 12345
         },
-        currentSource: null  // Tracks what's currently displayed on EO1
+        currentSource: null,  // Tracks what's currently displayed on EO1
+        displayHistory: []     // Recently displayed photos (max 30)
       };
       await this.save();
       this.loaded = true;
@@ -166,6 +167,84 @@ class SettingsManager {
     };
     await this.save();
     return this.settings.currentSource;
+  }
+
+  /**
+   * Get display history
+   * @returns {Array} - Array of recently displayed photos
+   */
+  async getHistory() {
+    if (!this.loaded) {
+      await this.load();
+    }
+    return this.settings.displayHistory || [];
+  }
+
+  /**
+   * Add a photo to display history
+   * @param {Object} photo - { id, owner, title, thumbnailUrl, media }
+   */
+  async addToHistory(photo) {
+    if (!this.loaded) {
+      await this.load();
+    }
+
+    // Ensure displayHistory exists
+    if (!this.settings.displayHistory) {
+      this.settings.displayHistory = [];
+    }
+
+    // Remove if already exists (to move to front)
+    this.settings.displayHistory = this.settings.displayHistory.filter(p => p.id !== photo.id);
+
+    // Add to front with timestamp
+    this.settings.displayHistory.unshift({
+      id: photo.id,
+      owner: photo.owner,
+      title: photo.title,
+      thumbnailUrl: photo.thumbnailUrl,
+      media: photo.media || 'photo',
+      displayedAt: new Date().toISOString()
+    });
+
+    // Cap at 30 items
+    if (this.settings.displayHistory.length > 30) {
+      this.settings.displayHistory = this.settings.displayHistory.slice(0, 30);
+    }
+
+    await this.save();
+    return this.settings.displayHistory;
+  }
+
+  /**
+   * Remove a photo from history
+   * @param {string} photoId - Photo ID to remove
+   */
+  async removeFromHistory(photoId) {
+    if (!this.loaded) {
+      await this.load();
+    }
+
+    if (!this.settings.displayHistory) {
+      return [];
+    }
+
+    this.settings.displayHistory = this.settings.displayHistory.filter(p => p.id !== photoId);
+    await this.save();
+    return this.settings.displayHistory;
+  }
+
+  /**
+   * Clear all display history
+   */
+  async clearHistory() {
+    if (!this.loaded) {
+      await this.load();
+    }
+
+    this.settings.displayHistory = [];
+    await this.save();
+    return [];
   }
 }
 

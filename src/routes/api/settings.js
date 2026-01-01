@@ -381,4 +381,44 @@ router.put('/current-source', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/settings/history
+ * Get recently displayed photos
+ */
+router.get('/history', async (req, res, next) => {
+  try {
+    const history = await settingsManager.getHistory();
+    res.json({ history });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * DELETE /api/settings/history
+ * Clear all display history
+ */
+router.delete('/history', async (req, res, next) => {
+  try {
+    await settingsManager.clearHistory();
+    res.json({ success: true, history: [] });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * DELETE /api/settings/history/:photoId
+ * Remove a single photo from history
+ */
+router.delete('/history/:photoId', async (req, res, next) => {
+  try {
+    const { photoId } = req.params;
+    const history = await settingsManager.removeFromHistory(photoId);
+    res.json({ success: true, history });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

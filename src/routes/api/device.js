@@ -86,6 +86,15 @@ router.post('/image/:photoId', async (req, res, next) => {
       thumbnailUrl: thumbnailUrl || null
     });
 
+    // Add to display history
+    await settingsManager.addToHistory({
+      id: photoId,
+      owner: owner || null,
+      title: title || `Photo ${photoId}`,
+      thumbnailUrl: thumbnailUrl || null,
+      media: 'photo'
+    });
+
     res.json({ success: true, action: 'displayImage', photoId });
   } catch (error) {
     next(error);
@@ -116,6 +125,15 @@ router.post('/video/:photoId', async (req, res, next) => {
       name: title || `Video ${photoId}`,
       url: `https://www.flickr.com/photos/${owner || 'any'}/${photoId}/`,
       thumbnailUrl: thumbnailUrl || null
+    });
+
+    // Add to display history
+    await settingsManager.addToHistory({
+      id: photoId,
+      owner: owner || null,
+      title: title || `Video ${photoId}`,
+      thumbnailUrl: thumbnailUrl || null,
+      media: 'video'
     });
 
     res.json({ success: true, action: 'displayVideo', photoId });
