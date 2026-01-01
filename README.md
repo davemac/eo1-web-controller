@@ -3,8 +3,9 @@
 A web-based interface for controlling the Electric Objects EO1 digital art display. Allows control from any device eg iPhone via Tailscale.
 
 <p align="center">
-  <img src="screenshots/photo-grid.png" width="48%" alt="Photo Grid">
-  <img src="screenshots/photo-preview.png" width="48%" alt="Photo Preview">
+  <img src="screenshots/main-interface.png" width="32%" alt="Main Interface">
+  <img src="screenshots/photo-grid.png" width="32%" alt="Photo Grid">
+  <img src="screenshots/photo-preview.png" width="32%" alt="Photo Preview">
 </p>
 
 ## Quick Start
