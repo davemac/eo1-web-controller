@@ -169,6 +169,16 @@ const API = {
     updateFlickr: (settings) => API.request('PUT', '/api/settings/flickr', settings),
 
     /**
+     * Get slideshow settings
+     */
+    getSlideshow: () => API.request('GET', '/api/settings/slideshow'),
+
+    /**
+     * Update slideshow settings
+     */
+    updateSlideshow: (settings) => API.request('PUT', '/api/settings/slideshow', settings),
+
+    /**
      * Get all presets
      */
     getPresets: () => API.request('GET', '/api/settings/presets'),

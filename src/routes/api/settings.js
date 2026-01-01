@@ -148,6 +148,65 @@ router.put('/flickr', async (req, res, next) => {
 });
 
 /**
+ * GET /api/settings/slideshow
+ * Get slideshow settings (interval, quiet hours, brightness)
+ */
+router.get('/slideshow', async (req, res, next) => {
+  try {
+    const slideshow = await settingsManager.getSlideshow();
+    res.json(slideshow);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * PUT /api/settings/slideshow
+ * Update slideshow settings
+ * Body: { interval?: number, quietStart?: number, quietEnd?: number, brightness?: number }
+ */
+router.put('/slideshow', async (req, res, next) => {
+  try {
+    const { interval, quietStart, quietEnd, brightness } = req.body;
+
+    const updates = {};
+
+    if (interval !== undefined) {
+      if (!Number.isInteger(interval) || interval < 1 || interval > 60) {
+        return res.status(400).json({ error: 'Interval must be 1-60 minutes' });
+      }
+      updates.interval = interval;
+    }
+
+    if (quietStart !== undefined) {
+      if (!Number.isInteger(quietStart) || (quietStart < -1 || quietStart > 23)) {
+        return res.status(400).json({ error: 'Quiet start hour must be -1 (disabled) or 0-23' });
+      }
+      updates.quietStart = quietStart;
+    }
+
+    if (quietEnd !== undefined) {
+      if (!Number.isInteger(quietEnd) || (quietEnd < -1 || quietEnd > 23)) {
+        return res.status(400).json({ error: 'Quiet end hour must be -1 (disabled) or 0-23' });
+      }
+      updates.quietEnd = quietEnd;
+    }
+
+    if (brightness !== undefined) {
+      if (brightness !== -1 && (typeof brightness !== 'number' || brightness < 0 || brightness > 1)) {
+        return res.status(400).json({ error: 'Brightness must be -1 (auto) or 0.0-1.0' });
+      }
+      updates.brightness = brightness;
+    }
+
+    const slideshow = await settingsManager.updateSlideshow(updates);
+    res.json({ success: true, slideshow });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * GET /api/settings/presets
  * Get all presets (built-in + user)
  */
