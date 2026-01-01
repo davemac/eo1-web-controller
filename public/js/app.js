@@ -901,9 +901,9 @@ async function displayOnEO1() {
     const mediaType = photo.media === 'video' ? 'video' : 'photo';
 
     if (photo.media === 'video') {
-      await API.device.displayVideo(photo.id, title, photo.thumbnailUrl);
+      await API.device.displayVideo(photo.id, title, photo.thumbnailUrl, photo.owner);
     } else {
-      await API.device.displayImage(photo.id, title, photo.thumbnailUrl);
+      await API.device.displayImage(photo.id, title, photo.thumbnailUrl, photo.owner);
     }
 
     // Update current source display
@@ -911,7 +911,7 @@ async function displayOnEO1() {
       type: mediaType,
       value: photo.id,
       name: title,
-      url: `https://www.flickr.com/photos/any/${photo.id}/`,
+      url: `https://www.flickr.com/photos/${photo.owner}/${photo.id}/`,
       thumbnailUrl: photo.thumbnailUrl
     });
 

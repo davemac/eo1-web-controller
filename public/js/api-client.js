@@ -49,12 +49,12 @@ const API = {
     /**
      * Display a specific image
      */
-    displayImage: (photoId, title, thumbnailUrl) => API.request('POST', `/api/device/image/${photoId}`, { title, thumbnailUrl }),
+    displayImage: (photoId, title, thumbnailUrl, owner) => API.request('POST', `/api/device/image/${photoId}`, { title, thumbnailUrl, owner }),
 
     /**
      * Display a specific video
      */
-    displayVideo: (photoId, title, thumbnailUrl) => API.request('POST', `/api/device/video/${photoId}`, { title, thumbnailUrl }),
+    displayVideo: (photoId, title, thumbnailUrl, owner) => API.request('POST', `/api/device/video/${photoId}`, { title, thumbnailUrl, owner }),
 
     /**
      * Set brightness level
