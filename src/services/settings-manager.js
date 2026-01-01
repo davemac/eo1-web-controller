@@ -33,6 +33,12 @@ class SettingsManager {
           ip: process.env.EO1_IP || '',
           port: parseInt(process.env.EO1_PORT) || 12345
         },
+        slideshow: {
+          interval: 5,        // Minutes between slides (1-60)
+          quietStart: -1,     // Quiet hours start (-1 = disabled)
+          quietEnd: -1,       // Quiet hours end (-1 = disabled)
+          brightness: -1      // -1 = auto, 0.0-1.0 = manual
+        },
         currentSource: null,  // Tracks what's currently displayed on EO1
         displayHistory: []     // Recently displayed photos (max 30)
       };
@@ -131,6 +137,49 @@ class SettingsManager {
     };
     await this.save();
     return this.settings.device;
+  }
+
+  /**
+   * Get slideshow settings
+   */
+  async getSlideshow() {
+    if (!this.loaded) {
+      await this.load();
+    }
+    // Ensure slideshow settings exist (for existing settings files)
+    if (!this.settings.slideshow) {
+      this.settings.slideshow = {
+        interval: 5,
+        quietStart: -1,
+        quietEnd: -1,
+        brightness: -1
+      };
+    }
+    return this.settings.slideshow;
+  }
+
+  /**
+   * Update slideshow settings
+   */
+  async updateSlideshow(slideshowSettings) {
+    if (!this.loaded) {
+      await this.load();
+    }
+    // Ensure slideshow settings exist
+    if (!this.settings.slideshow) {
+      this.settings.slideshow = {
+        interval: 5,
+        quietStart: -1,
+        quietEnd: -1,
+        brightness: -1
+      };
+    }
+    this.settings.slideshow = {
+      ...this.settings.slideshow,
+      ...slideshowSettings
+    };
+    await this.save();
+    return this.settings.slideshow;
   }
 
   /**

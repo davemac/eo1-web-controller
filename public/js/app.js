@@ -1223,6 +1223,43 @@ async function loadFlickrSettings() {
   }
 }
 
+/**
+ * Load and populate slideshow settings from backend
+ */
+async function loadSlideshowSettings() {
+  try {
+    const settings = await API.settings.getSlideshow();
+
+    // Populate interval
+    if (settings.interval) {
+      elements.interval.value = settings.interval;
+    }
+
+    // Populate quiet hours
+    if (settings.quietStart !== undefined) {
+      elements.quietStart.value = settings.quietStart;
+    }
+    if (settings.quietEnd !== undefined) {
+      elements.quietEnd.value = settings.quietEnd;
+    }
+
+    // Populate brightness
+    if (settings.brightness !== undefined) {
+      if (settings.brightness === -1) {
+        elements.autoBrightness.checked = true;
+        elements.brightnessSliderRow.classList.add('hidden');
+      } else {
+        elements.autoBrightness.checked = false;
+        elements.brightnessSliderRow.classList.remove('hidden');
+        elements.brightnessSlider.value = Math.round(settings.brightness * 100);
+        elements.brightnessValue.textContent = `${Math.round(settings.brightness * 100)}%`;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load slideshow settings:', error);
+  }
+}
+
 // Save Flickr settings
 async function saveFlickrSettings() {
   const apiKey = elements.flickrApiKey.value.trim();
@@ -1433,7 +1470,16 @@ function setupEventListeners() {
       const startHour = parseInt(elements.quietStart.value);
       const endHour = parseInt(elements.quietEnd.value);
 
-      await API.device.setOptions({ brightness, interval, startHour, endHour });
+      // Send to device AND save to backend for persistence
+      await Promise.all([
+        API.device.setOptions({ brightness, interval, startHour, endHour }),
+        API.settings.updateSlideshow({
+          brightness,
+          interval,
+          quietStart: startHour,
+          quietEnd: endHour
+        })
+      ]);
       showToast('Settings applied!', 'success');
     } catch (error) {
       showToast(formatError('Failed to apply settings', error), 'error');
@@ -1534,6 +1580,7 @@ async function init() {
     getDeviceInfo(),
     loadPresets(),
     loadFlickrSettings(),
+    loadSlideshowSettings(),
     loadCurrentSource(),
     loadHistory()
   ]);

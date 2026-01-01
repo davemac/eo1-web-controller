@@ -118,7 +118,9 @@ Wraps the Flickr REST API:
 Persists settings to `config/settings.json`:
 - Flickr API credentials
 - Device IP address
+- Slideshow settings (interval, quiet hours, brightness)
 - Current source (what's displaying)
+- Display history
 
 Falls back to environment variables if settings file is empty.
 
@@ -161,6 +163,8 @@ All responses include pagination info and transformed photo objects with:
 | `/` | PUT | Update settings |
 | `/flickr` | GET | Get Flickr settings with source info |
 | `/flickr` | PUT | Update Flickr API credentials |
+| `/slideshow` | GET | Get slideshow settings (interval, quiet hours, brightness) |
+| `/slideshow` | PUT | Update slideshow settings |
 | `/presets` | GET | Get all presets (built-in + custom) |
 | `/presets` | POST | Add custom preset from URL |
 | `/presets/:id` | DELETE | Delete custom preset |
