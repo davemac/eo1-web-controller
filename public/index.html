@@ -72,8 +72,16 @@
     <section class="card">
       <h2>Display Source</h2>
 
-      <!-- Search Flickr -->
-      <div class="search-section">
+      <!-- Source Type Tabs -->
+      <div class="source-tabs">
+        <button class="tab active" data-tab="flickr">Flickr</button>
+        <button class="tab" data-tab="url">Image URL</button>
+      </div>
+
+      <!-- Flickr Tab Content -->
+      <div class="tab-content" id="flickr-tab">
+        <!-- Search Flickr -->
+        <div class="search-section">
         <label class="search-label">Display a Flickr tag</label>
         <div class="search-bar">
           <input type="text" id="searchInput" placeholder="e.g., landscape, art, nature">
@@ -156,6 +164,25 @@
         <span class="page-info" aria-live="polite">Page 1 of 1</span>
         <button class="btn btn-outline btn-next-page" aria-label="Next page">Next →</button>
       </nav>
+      </div>
+
+      <!-- URL Tab Content -->
+      <div class="tab-content hidden" id="url-tab">
+        <div class="url-input-section">
+          <p class="url-description">Display any image from the web by entering its URL directly.</p>
+          <div class="url-input-row">
+            <input type="url" id="imageUrlInput" placeholder="https://example.com/image.jpg" aria-label="Image URL">
+            <button class="btn btn-secondary" id="btnPreviewUrl">Preview</button>
+          </div>
+        </div>
+        <div class="url-preview" id="urlPreview">
+          <div class="url-preview-empty">Enter a URL above to preview the image</div>
+        </div>
+        <button class="btn btn-primary btn-block" id="btnDisplayUrl" disabled>
+          Display on EO1
+        </button>
+        <p class="url-note">Note: Requires updated EO1 app with URL support. The Android app update is pending.</p>
+      </div>
     </section>
 
     <!-- Slideshow Settings -->

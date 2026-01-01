@@ -146,7 +146,15 @@ const elements = {
   presetFilterBW: document.getElementById('presetFilterBW'),
   presetFilterDOF: document.getElementById('presetFilterDOF'),
   presetFilterMinimal: document.getElementById('presetFilterMinimal'),
-  presetFilterPattern: document.getElementById('presetFilterPattern')
+  presetFilterPattern: document.getElementById('presetFilterPattern'),
+  // URL tab elements
+  sourceTabs: document.querySelectorAll('.source-tabs .tab'),
+  flickrTab: document.getElementById('flickr-tab'),
+  urlTab: document.getElementById('url-tab'),
+  imageUrlInput: document.getElementById('imageUrlInput'),
+  btnPreviewUrl: document.getElementById('btnPreviewUrl'),
+  urlPreview: document.getElementById('urlPreview'),
+  btnDisplayUrl: document.getElementById('btnDisplayUrl')
 };
 
 // ============================================================================
@@ -513,7 +521,8 @@ function updateCurrentSourceDisplay(source) {
     photo: 'Photo',
     video: 'Video',
     explore: 'Explore',
-    search: 'Search'
+    search: 'Search',
+    url: 'URL'
   };
   elements.currentSourceType.textContent = typeLabels[source.type] || source.type;
 
@@ -1038,6 +1047,107 @@ async function displayOnEO1() {
   }
 }
 
+// ============================================================================
+// URL Tab Functions
+// ============================================================================
+
+/**
+ * Switch between source tabs (Flickr/URL)
+ */
+function switchTab(tabName) {
+  // Update tab buttons
+  elements.sourceTabs.forEach(tab => {
+    if (tab.dataset.tab === tabName) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+
+  // Show/hide tab content
+  if (tabName === 'flickr') {
+    elements.flickrTab.classList.remove('hidden');
+    elements.urlTab.classList.add('hidden');
+  } else {
+    elements.flickrTab.classList.add('hidden');
+    elements.urlTab.classList.remove('hidden');
+  }
+}
+
+/**
+ * Preview an image from URL
+ */
+function previewImageUrl() {
+  const url = elements.imageUrlInput.value.trim();
+
+  if (!url) {
+    elements.urlPreview.innerHTML = '<div class="url-preview-empty">Enter a URL above to preview the image</div>';
+    elements.btnDisplayUrl.disabled = true;
+    return;
+  }
+
+  // Validate URL format
+  if (!/^https?:\/\/.+/i.test(url)) {
+    elements.urlPreview.innerHTML = '<div class="url-preview-error">Invalid URL. Must start with http:// or https://</div>';
+    elements.btnDisplayUrl.disabled = true;
+    return;
+  }
+
+  // Show loading state
+  elements.urlPreview.innerHTML = '<div class="url-preview-empty">Loading preview...</div>';
+
+  // Create image element to test if URL loads
+  const img = document.createElement('img');
+  img.onload = () => {
+    elements.urlPreview.innerHTML = '';
+    elements.urlPreview.appendChild(img);
+    elements.btnDisplayUrl.disabled = false;
+    elements.btnDisplayUrl.dataset.url = url;
+  };
+  img.onerror = () => {
+    elements.urlPreview.innerHTML = '<div class="url-preview-error">Failed to load image. Check the URL is correct and publicly accessible.</div>';
+    elements.btnDisplayUrl.disabled = true;
+  };
+  img.src = url;
+  img.alt = 'Preview';
+}
+
+/**
+ * Display an image from URL on the EO1
+ */
+async function displayUrlOnEO1() {
+  const url = elements.btnDisplayUrl.dataset.url;
+
+  if (!url) {
+    showToast('No image URL to display', 'error');
+    return;
+  }
+
+  try {
+    // Extract a title from the URL (filename without extension)
+    const urlParts = url.split('/');
+    const filename = urlParts[urlParts.length - 1].split('?')[0];
+    const title = filename.replace(/\.[^/.]+$/, '') || 'External Image';
+
+    await API.device.displayUrl(url, title);
+
+    // Update current source display
+    updateCurrentSourceDisplay({
+      type: 'url',
+      value: url,
+      name: title,
+      url: url,
+      thumbnailUrl: url
+    });
+
+    showToast('Displaying on EO1!', 'success');
+    // Reload history
+    loadHistory();
+  } catch (error) {
+    showToast(formatError('Failed to display URL', error), 'error');
+  }
+}
+
 /**
  * Skip to the next photo in the current grid and display it on EO1
  */
@@ -1511,6 +1621,20 @@ function setupEventListeners() {
 
   // Flickr settings
   elements.btnSaveFlickr.addEventListener('click', saveFlickrSettings);
+
+  // Source tabs (Flickr/URL)
+  elements.sourceTabs.forEach(tab => {
+    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
+
+  // URL tab
+  elements.btnPreviewUrl.addEventListener('click', previewImageUrl);
+  elements.imageUrlInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      previewImageUrl();
+    }
+  });
+  elements.btnDisplayUrl.addEventListener('click', displayUrlOnEO1);
 }
 
 // ============================================================================

@@ -57,6 +57,11 @@ const API = {
     displayVideo: (photoId, title, thumbnailUrl, owner) => API.request('POST', `/api/device/video/${photoId}`, { title, thumbnailUrl, owner }),
 
     /**
+     * Display an image from any URL
+     */
+    displayUrl: (url, title) => API.request('POST', '/api/device/url', { url, title }),
+
+    /**
      * Set brightness level
      * @param {number|null} level - 0.0-1.0, or null for auto
      */

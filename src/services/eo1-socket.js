@@ -5,6 +5,7 @@
  * Protocol: Plain text, comma-delimited commands
  * - image,<flickr_photo_id> - Display specific image
  * - video,<flickr_photo_id> - Display specific video
+ * - url,<image_url> - Display image from any URL
  * - resume, - Skip to next / resume slideshow
  * - tag,<tagname> - Change Flickr tag
  * - brightness,<float> - Set brightness (0.0-1.0)
@@ -70,6 +71,14 @@ class EO1Socket {
    */
   async displayVideo(photoId) {
     return this.sendCommand(`video,${photoId}`);
+  }
+
+  /**
+   * Display an image from any URL
+   * @param {string} url - Full URL to the image
+   */
+  async displayUrl(url) {
+    return this.sendCommand(`url,${url}`);
   }
 
   /**

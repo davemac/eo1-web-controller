@@ -143,6 +143,46 @@ router.post('/video/:photoId', async (req, res, next) => {
 });
 
 /**
+ * POST /api/device/url
+ * Display an image from any URL
+ * Body: { url: string, title?: string }
+ */
+router.post('/url', async (req, res, next) => {
+  try {
+    const { url, title } = req.body;
+
+    if (!url || !/^https?:\/\/.+/i.test(url)) {
+      return res.status(400).json({ error: 'Invalid URL. Must start with http:// or https://' });
+    }
+
+    const socket = getSocket(req);
+    await socket.displayUrl(url);
+
+    // Track current source
+    await settingsManager.setCurrentSource({
+      type: 'url',
+      value: url,
+      name: title || 'External Image',
+      url: url,
+      thumbnailUrl: url
+    });
+
+    // Add to display history
+    await settingsManager.addToHistory({
+      id: url,
+      owner: null,
+      title: title || 'External Image',
+      thumbnailUrl: url,
+      media: 'url'
+    });
+
+    res.json({ success: true, action: 'displayUrl', url });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * POST /api/device/brightness
  * Set screen brightness
  * Body: { level: number (0.0-1.0) } or { auto: true }
