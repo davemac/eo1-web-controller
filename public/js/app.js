@@ -67,6 +67,10 @@ const elements = {
   currentSourceType: document.getElementById('currentSourceType'),
   currentSourceName: document.getElementById('currentSourceName'),
   currentSourceLink: document.getElementById('currentSourceLink'),
+  // History
+  historySection: document.getElementById('historySection'),
+  historyCarousel: document.getElementById('historyCarousel'),
+  btnClearHistory: document.getElementById('btnClearHistory'),
   // Quick controls
   btnSkip: document.getElementById('btnSkip'),
   btnScreenToggle: document.getElementById('btnScreenToggle'),
@@ -380,6 +384,114 @@ async function loadCurrentSource() {
     updateCurrentSourceDisplay(result.currentSource);
   } catch (error) {
     console.error('Failed to load current source:', error);
+  }
+}
+
+// ============================================================================
+// History Functions
+// ============================================================================
+
+/**
+ * Load and render display history
+ */
+async function loadHistory() {
+  try {
+    const result = await API.settings.getHistory();
+    renderHistory(result.history);
+  } catch (error) {
+    console.error('Failed to load history:', error);
+  }
+}
+
+/**
+ * Render history carousel
+ */
+function renderHistory(history) {
+  if (!history || history.length === 0) {
+    elements.historySection.style.display = 'none';
+    return;
+  }
+
+  elements.historySection.style.display = 'block';
+  elements.historyCarousel.innerHTML = '';
+
+  for (const item of history) {
+    const div = document.createElement('div');
+    div.className = 'history-item' + (item.media === 'video' ? ' video' : '');
+    div.title = item.title || 'Untitled';
+    div.innerHTML = `
+      <img src="${item.thumbnailUrl || ''}" alt="${item.title || 'Photo'}" loading="lazy">
+      <button class="remove-btn" title="Remove from history">&times;</button>
+    `;
+
+    // Click to re-display
+    div.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('remove-btn')) {
+        displayFromHistory(item);
+      }
+    });
+
+    // Remove button
+    div.querySelector('.remove-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeFromHistory(item.id);
+    });
+
+    elements.historyCarousel.appendChild(div);
+  }
+}
+
+/**
+ * Display a photo from history
+ */
+async function displayFromHistory(item) {
+  try {
+    if (item.media === 'video') {
+      await API.device.displayVideo(item.id, item.title, item.thumbnailUrl, item.owner);
+    } else {
+      await API.device.displayImage(item.id, item.title, item.thumbnailUrl, item.owner);
+    }
+
+    // Update current source display
+    state.displayedPhotoId = item.id;
+    updateCurrentSourceDisplay({
+      type: item.media || 'photo',
+      value: item.id,
+      name: item.title || 'Untitled',
+      url: `https://www.flickr.com/photos/${item.owner || 'any'}/${item.id}/`,
+      thumbnailUrl: item.thumbnailUrl
+    });
+
+    showToast('Displaying on EO1!', 'success');
+    // Reload history to move item to front
+    await loadHistory();
+  } catch (error) {
+    showToast(formatError('Failed to display', error), 'error');
+  }
+}
+
+/**
+ * Remove a single photo from history
+ */
+async function removeFromHistory(photoId) {
+  try {
+    await API.settings.removeFromHistory(photoId);
+    await loadHistory();
+  } catch (error) {
+    showToast(formatError('Failed to remove', error), 'error');
+  }
+}
+
+/**
+ * Clear all display history
+ */
+async function clearHistory() {
+  try {
+    await API.settings.clearHistory();
+    await loadHistory();
+    showToast('History cleared', 'success');
+  } catch (error) {
+    showToast(formatError('Failed to clear history', error), 'error');
   }
 }
 
@@ -919,6 +1031,8 @@ async function displayOnEO1() {
 
     showToast('Displaying on EO1!', 'success');
     closePreview();
+    // Reload history to show new item
+    loadHistory();
   } catch (error) {
     showToast(formatError('Failed to send to EO1', error), 'error');
   }
@@ -966,6 +1080,8 @@ async function skipToNextPhoto() {
     });
 
     showToast(`Skipped to ${nextIndex + 1}/${state.photos.length}`, 'success');
+    // Reload history to show new item
+    loadHistory();
   } catch (error) {
     showToast(formatError('Skip failed', error), 'error');
   }
@@ -1226,6 +1342,9 @@ function setupEventListeners() {
     }, 300);
   });
 
+  // History
+  elements.btnClearHistory.addEventListener('click', clearHistory);
+
   // Presets
   elements.btnAddPreset.addEventListener('click', openAddPresetModal);
   elements.btnCloseAddPreset.addEventListener('click', closeAddPresetModal);
@@ -1415,7 +1534,8 @@ async function init() {
     getDeviceInfo(),
     loadPresets(),
     loadFlickrSettings(),
-    loadCurrentSource()
+    loadCurrentSource(),
+    loadHistory()
   ]);
 
   // Don't auto-check connection - it opens/closes sockets which can crash EO1

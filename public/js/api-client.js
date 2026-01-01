@@ -196,6 +196,21 @@ const API = {
     /**
      * Update current source
      */
-    setCurrentSource: (source) => API.request('PUT', '/api/settings/current-source', source)
+    setCurrentSource: (source) => API.request('PUT', '/api/settings/current-source', source),
+
+    /**
+     * Get display history
+     */
+    getHistory: () => API.request('GET', '/api/settings/history'),
+
+    /**
+     * Clear all display history
+     */
+    clearHistory: () => API.request('DELETE', '/api/settings/history'),
+
+    /**
+     * Remove a single photo from history
+     */
+    removeFromHistory: (photoId) => API.request('DELETE', `/api/settings/history/${photoId}`)
   }
 };
