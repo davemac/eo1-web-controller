@@ -68,7 +68,7 @@ router.post('/resume', async (req, res, next) => {
 router.post('/image/:photoId', async (req, res, next) => {
   try {
     const { photoId } = req.params;
-    const { title, thumbnailUrl } = req.body || {};
+    const { title, thumbnailUrl, owner } = req.body || {};
 
     if (!photoId || !/^\d+$/.test(photoId)) {
       return res.status(400).json({ error: 'Invalid photo ID' });
@@ -82,7 +82,7 @@ router.post('/image/:photoId', async (req, res, next) => {
       type: 'photo',
       value: photoId,
       name: title || `Photo ${photoId}`,
-      url: `https://www.flickr.com/photos/any/${photoId}/`,
+      url: `https://www.flickr.com/photos/${owner || 'any'}/${photoId}/`,
       thumbnailUrl: thumbnailUrl || null
     });
 
@@ -100,7 +100,7 @@ router.post('/image/:photoId', async (req, res, next) => {
 router.post('/video/:photoId', async (req, res, next) => {
   try {
     const { photoId } = req.params;
-    const { title, thumbnailUrl } = req.body || {};
+    const { title, thumbnailUrl, owner } = req.body || {};
 
     if (!photoId || !/^\d+$/.test(photoId)) {
       return res.status(400).json({ error: 'Invalid photo ID' });
@@ -114,7 +114,7 @@ router.post('/video/:photoId', async (req, res, next) => {
       type: 'video',
       value: photoId,
       name: title || `Video ${photoId}`,
-      url: `https://www.flickr.com/photos/any/${photoId}/`,
+      url: `https://www.flickr.com/photos/${owner || 'any'}/${photoId}/`,
       thumbnailUrl: thumbnailUrl || null
     });
 

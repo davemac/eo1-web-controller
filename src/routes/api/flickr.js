@@ -29,6 +29,7 @@ function transformPhoto(photo) {
 
   return {
     id: photo.id,
+    owner: photo.owner,
     title: photo.title,
     media: photo.media || 'photo',
     thumbnailUrl: photo.url_sq || photo.url_m,
