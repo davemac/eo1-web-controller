@@ -32,6 +32,7 @@ const state = {
   albums: [],
   currentAlbum: null,
   selectedPhoto: null,
+  displayedPhotoId: null,  // Track what's currently showing on EO1
   flickrUserId: null,
   // Filter state - defaults for EO1 display
   filters: {
@@ -906,7 +907,8 @@ async function displayOnEO1() {
       await API.device.displayImage(photo.id, title, photo.thumbnailUrl, photo.owner);
     }
 
-    // Update current source display
+    // Track what's displayed and update UI
+    state.displayedPhotoId = photo.id;
     updateCurrentSourceDisplay({
       type: mediaType,
       value: photo.id,
@@ -919,6 +921,53 @@ async function displayOnEO1() {
     closePreview();
   } catch (error) {
     showToast(formatError('Failed to send to EO1', error), 'error');
+  }
+}
+
+/**
+ * Skip to the next photo in the current grid and display it on EO1
+ */
+async function skipToNextPhoto() {
+  // Need photos in the grid to skip through
+  if (!state.photos.length) {
+    showToast('No photos to skip through', 'error');
+    return;
+  }
+
+  // Find current photo's position in the grid
+  let currentIndex = -1;
+  if (state.displayedPhotoId) {
+    currentIndex = state.photos.findIndex(p => p.id === state.displayedPhotoId);
+  }
+
+  // Get next photo (wrap to start if at end, or start from 0 if not found)
+  const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % state.photos.length : 0;
+  const nextPhoto = state.photos[nextIndex];
+
+  // Display it on EO1
+  try {
+    const title = nextPhoto.title || 'Untitled';
+    const mediaType = nextPhoto.media === 'video' ? 'video' : 'photo';
+
+    if (nextPhoto.media === 'video') {
+      await API.device.displayVideo(nextPhoto.id, title, nextPhoto.thumbnailUrl, nextPhoto.owner);
+    } else {
+      await API.device.displayImage(nextPhoto.id, title, nextPhoto.thumbnailUrl, nextPhoto.owner);
+    }
+
+    // Track what's displayed and update UI
+    state.displayedPhotoId = nextPhoto.id;
+    updateCurrentSourceDisplay({
+      type: mediaType,
+      value: nextPhoto.id,
+      name: title,
+      url: `https://www.flickr.com/photos/${nextPhoto.owner}/${nextPhoto.id}/`,
+      thumbnailUrl: nextPhoto.thumbnailUrl
+    });
+
+    showToast(`Skipped to ${nextIndex + 1}/${state.photos.length}`, 'success');
+  } catch (error) {
+    showToast(formatError('Skip failed', error), 'error');
   }
 }
 
@@ -1117,14 +1166,7 @@ function setupCollapsibles() {
  */
 function setupEventListeners() {
   // Quick controls
-  elements.btnSkip.addEventListener('click', async () => {
-    try {
-      await API.device.skip();
-      showToast('Skipped to next', 'success');
-    } catch (error) {
-      showToast(formatError('Skip failed', error), 'error');
-    }
-  });
+  elements.btnSkip.addEventListener('click', () => skipToNextPhoto());
 
   elements.btnScreenToggle.addEventListener('click', async () => {
     try {
